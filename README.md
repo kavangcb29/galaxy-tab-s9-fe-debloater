@@ -8,6 +8,7 @@
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-Donate-yellow.svg?logo=buy-me-a-coffee)](https://buymeacoffee.com/kavangcb29)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-red.svg?logo=ko-fi)](https://ko-fi.com/kavangcb29)
 [![PayPal](https://img.shields.io/badge/PayPal-Donate-00457C.svg?logo=paypal&logoColor=white)](https://paypal.me/KavanSudev)
+[![UPI Support](https://img.shields.io/badge/UPI-GPay%20%7C%20PhonePe%20%7C%20Paytm-blueviolet.svg)](#-support-the-project)
 
 An intelligent, non-root debloater and performance accelerator designed specifically for the **Samsung Galaxy Tab S9 FE (SM-X510 / SM-X516B)** and **One UI 6, 7, 8, 8.5, and One UI 9** devices. 
 
@@ -174,6 +175,10 @@ If this toolkit helped make your Galaxy Tab S9 FE snappier, reclaimed RAM, impro
     <img src="https://img.shields.io/badge/Donate-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="Donate with PayPal" height="42">
   </a>
 </p>
+
+* **🌍 International Supporters**: [Buy Me a Coffee](https://buymeacoffee.com/kavangcb29), [Ko-fi](https://ko-fi.com/kavangcb29), or [PayPal Direct](https://paypal.me/KavanSudev).
+* **🇮🇳 Indian Users (GPay / PhonePe / Paytm / BHIM UPI)**:
+  * Transfer directly via UPI ID: **`kavangcb@gmail.com`**
 
 *⭐ Don't forget to star the repository if you found it useful!*
 

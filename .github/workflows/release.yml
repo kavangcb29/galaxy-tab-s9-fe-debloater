@@ -1,0 +1,43 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyinstaller
+
+      - name: Build Executable
+        run: |
+          pyinstaller --noconfirm --onedir --windowed --name "Samsung-Tab-S9FE-Debloater" --add-data "presets.json;." --add-data "database.py;." --add-data "adb_manager.py;." --add-data "utils.py;." gui.py
+          if (Test-Path "bin") { Copy-Item -Recurse -Force "bin" "dist/Samsung-Tab-S9FE-Debloater/bin" }
+          New-Item -ItemType Directory -Force -Path "dist/Samsung-Tab-S9FE-Debloater/backups"
+          Compress-Archive -Path "dist/Samsung-Tab-S9FE-Debloater" -DestinationPath "Samsung-Tab-S9FE-Debloater-Windows.zip"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: Samsung-Tab-S9FE-Debloater-Windows.zip
+          draft: false
+          prerelease: false
+          generate_release_notes: true
