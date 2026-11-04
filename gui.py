@@ -154,8 +154,39 @@ class DebloaterGUI(tk.Tk):
         self.btn_support = tk.Button(self.header_frame, text="☕ Support", font=("Segoe UI", 9, "bold"),
                                      bg="#d97706", fg="#ffffff", activebackground="#b45309",
                                      activeforeground="#ffffff", relief=tk.FLAT, bd=0, padx=10, pady=4,
-                                     command=lambda: webbrowser.open("https://buymeacoffee.com/kavangcb29"))
+                                     command=self._show_support_modal)
         self.btn_support.pack(side=tk.RIGHT, padx=(0, 8))
+
+    def _show_support_modal(self):
+        modal = tk.Toplevel(self)
+        modal.title("Support the Project")
+        modal.geometry("380x270")
+        modal.configure(bg=BG_CARD)
+        modal.resizable(False, False)
+        modal.transient(self)
+        modal.grab_set()
+
+        lbl = tk.Label(modal, text="☕ Support & Donations", font=("Segoe UI", 12, "bold"), fg=TEXT_PRIMARY, bg=BG_CARD)
+        lbl.pack(pady=(16, 4))
+
+        sub = tk.Label(modal, text="If this toolkit helped optimize your Tab S9 FE,\nconsider supporting maintenance and future One UI updates!", 
+                       font=("Segoe UI", 8), fg=TEXT_SECONDARY, bg=BG_CARD, justify=tk.CENTER)
+        sub.pack(pady=(0, 14))
+
+        btn_bmac = tk.Button(modal, text="☕ Buy Me a Coffee", font=("Segoe UI", 9, "bold"),
+                             bg="#f59e0b", fg="#000000", relief=tk.FLAT, bd=0, padx=12, pady=5, width=28,
+                             command=lambda: [webbrowser.open("https://buymeacoffee.com/kavangcb29"), modal.destroy()])
+        btn_bmac.pack(pady=4)
+
+        btn_kofi = tk.Button(modal, text="❤️ Ko-fi Support", font=("Segoe UI", 9, "bold"),
+                             bg="#e53e3e", fg="#ffffff", relief=tk.FLAT, bd=0, padx=12, pady=5, width=28,
+                             command=lambda: [webbrowser.open("https://ko-fi.com/kavangcb29"), modal.destroy()])
+        btn_kofi.pack(pady=4)
+
+        btn_paypal = tk.Button(modal, text="💳 PayPal (Direct)", font=("Segoe UI", 9, "bold"),
+                               bg="#0070ba", fg="#ffffff", relief=tk.FLAT, bd=0, padx=12, pady=5, width=28,
+                               command=lambda: [webbrowser.open("https://paypal.me/KavanSudev"), modal.destroy()])
+        btn_paypal.pack(pady=4)
 
     def _build_notebook(self):
         self.notebook = ttk.Notebook(self)

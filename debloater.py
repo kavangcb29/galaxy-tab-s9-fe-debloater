@@ -384,8 +384,18 @@ class TabS9FEDebloater:
                 break
             elif choice == 'S':
                 import webbrowser
-                print(colorize("\nOpening https://buymeacoffee.com/kavangcb29 in your browser... Thank you for your support!", Colors.GREEN))
-                webbrowser.open("https://buymeacoffee.com/kavangcb29")
+                print(colorize("\n=== SUPPORT & DONATIONS ===", Colors.CYAN))
+                print("  1. Buy Me a Coffee (https://buymeacoffee.com/kavangcb29)")
+                print("  2. Ko-fi (https://ko-fi.com/kavangcb29)")
+                print("  3. PayPal Direct (https://paypal.me/KavanSudev)")
+                print("  0. Back")
+                s_pick = input("\nSelect platform [1-3]: ").strip()
+                if s_pick == '1':
+                    webbrowser.open("https://buymeacoffee.com/kavangcb29")
+                elif s_pick == '2':
+                    webbrowser.open("https://ko-fi.com/kavangcb29")
+                elif s_pick == '3':
+                    webbrowser.open("https://paypal.me/KavanSudev")
             elif choice == '1':
                 self.menu_presets()
             elif choice == '2':

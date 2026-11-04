@@ -7,6 +7,7 @@
 [![Knox Safe](https://img.shields.io/badge/Knox-Untouched%20(0x0)-success.svg)](#-safety--security-model)
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-Donate-yellow.svg?logo=buy-me-a-coffee)](https://buymeacoffee.com/kavangcb29)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-red.svg?logo=ko-fi)](https://ko-fi.com/kavangcb29)
+[![PayPal](https://img.shields.io/badge/PayPal-Donate-00457C.svg?logo=paypal&logoColor=white)](https://paypal.me/KavanSudev)
 
 An intelligent, non-root debloater and performance accelerator designed specifically for the **Samsung Galaxy Tab S9 FE (SM-X510 / SM-X516B)** and **One UI 6+** devices. 
 
@@ -144,6 +145,10 @@ If this toolkit helped make your Galaxy Tab S9 FE snappier, reclaimed RAM, impro
   &nbsp;&nbsp;
   <a href="https://ko-fi.com/kavangcb29" target="_blank">
     <img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support on Ko-fi" height="42">
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://paypal.me/KavanSudev" target="_blank">
+    <img src="https://img.shields.io/badge/Donate-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="Donate with PayPal" height="42">
   </a>
 </p>
 
