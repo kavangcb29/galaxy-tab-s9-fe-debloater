@@ -373,14 +373,19 @@ class TabS9FEDebloater:
             print("│  3. Restore Center (Reinstall / Re-enable Removed Packages)  │")
             print("│  4. Performance Tweaks (0.5x Animation Speed, Reboot)        │")
             print("│  5. Launch Desktop Graphical User Interface (GUI)            │")
+            print("│  S. ☕ Support Project (Buy Me a Coffee)                      │")
             print("│  R. Refresh Device Connection                                │")
             print("│  0. Exit                                                     │")
             print(colorize("└──────────────────────────────────────────────────────────────┘", Colors.BOLD))
 
-            choice = input("\nSelect option [0-5, R]: ").strip().upper()
+            choice = input("\nSelect option [0-5, S, R]: ").strip().upper()
             if choice == '0':
                 print("Goodbye!")
                 break
+            elif choice == 'S':
+                import webbrowser
+                print(colorize("\nOpening https://buymeacoffee.com/kavangcb29 in your browser... Thank you for your support!", Colors.GREEN))
+                webbrowser.open("https://buymeacoffee.com/kavangcb29")
             elif choice == '1':
                 self.menu_presets()
             elif choice == '2':

@@ -1,0 +1,7 @@
+# GitHub Funding Configuration
+# See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository
+
+github: kavangcb29
+buy_me_a_coffee: kavangcb29
+ko_fi: kavangcb29
+custom: ["https://buymeacoffee.com/kavangcb29", "https://ko-fi.com/kavangcb29"]

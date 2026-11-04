@@ -5,6 +5,8 @@
 [![Platform: Android / One UI](https://img.shields.io/badge/Platform-One%20UI%206%20%7C%206.1%20%7C%207-orange.svg)](https://www.samsung.com)
 [![Device: Tab S9 FE / FE+](https://img.shields.io/badge/Device-Galaxy%20Tab%20S9%20FE%20%7C%20FE%2B-blueviolet.svg)](#supported-devices)
 [![Knox Safe](https://img.shields.io/badge/Knox-Untouched%20(0x0)-success.svg)](#-safety--security-model)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-Donate-yellow.svg?logo=buy-me-a-coffee)](https://buymeacoffee.com/kavangcb29)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-red.svg?logo=ko-fi)](https://ko-fi.com/kavangcb29)
 
 An intelligent, non-root debloater and performance accelerator designed specifically for the **Samsung Galaxy Tab S9 FE (SM-X510 / SM-X516B)** and **One UI 6+** devices. 
 
@@ -128,6 +130,24 @@ If you ever want an uninstalled app back:
 ## 🤝 Contributing
 
 Contributions are welcome! Please check [CONTRIBUTING.md](CONTRIBUTING.md) for instructions on adding packages, testing presets, or submitting pull requests.
+
+---
+
+## ☕ Support the Project
+
+If this toolkit helped make your Galaxy Tab S9 FE snappier, reclaimed RAM, improved battery life, or saved you time, consider supporting its maintenance and future One UI updates:
+
+<p align="left">
+  <a href="https://buymeacoffee.com/kavangcb29" target="_blank">
+    <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="42" width="150">
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://ko-fi.com/kavangcb29" target="_blank">
+    <img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support on Ko-fi" height="42">
+  </a>
+</p>
+
+*⭐ Don't forget to star the repository if you found it useful!*
 
 ---
 

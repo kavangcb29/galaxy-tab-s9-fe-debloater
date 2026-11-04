@@ -7,6 +7,7 @@ import os
 import sys
 import threading
 import time
+import webbrowser
 from pathlib import Path
 
 # Ensure UTF-8 output on Windows terminals
@@ -147,7 +148,14 @@ class DebloaterGUI(tk.Tk):
                                      bg=BG_CARD_LIGHT, fg=TEXT_PRIMARY, activebackground=BORDER_COLOR,
                                      activeforeground=TEXT_PRIMARY, relief=tk.FLAT, bd=0, padx=10, pady=4,
                                      command=self.async_refresh_device)
-        self.btn_refresh.pack(side=tk.RIGHT, padx=(0, 10))
+        self.btn_refresh.pack(side=tk.RIGHT, padx=(0, 6))
+
+        # Buy Me a Coffee / Support button
+        self.btn_support = tk.Button(self.header_frame, text="☕ Support", font=("Segoe UI", 9, "bold"),
+                                     bg="#d97706", fg="#ffffff", activebackground="#b45309",
+                                     activeforeground="#ffffff", relief=tk.FLAT, bd=0, padx=10, pady=4,
+                                     command=lambda: webbrowser.open("https://buymeacoffee.com/kavangcb29"))
+        self.btn_support.pack(side=tk.RIGHT, padx=(0, 8))
 
     def _build_notebook(self):
         self.notebook = ttk.Notebook(self)
