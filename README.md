@@ -2,14 +2,14 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.9+](https://img.shields.io/badge/Python-3.9%2B-brightgreen.svg)](https://www.python.org/)
-[![Platform: Android / One UI](https://img.shields.io/badge/Platform-One%20UI%206%20%7C%206.1%20%7C%207-orange.svg)](https://www.samsung.com)
+[![Platform: Android / One UI](https://img.shields.io/badge/Platform-One%20UI%206%20%7C%207%20%7C%208%20%7C%208.5%20%7C%209-orange.svg)](https://www.samsung.com)
 [![Device: Tab S9 FE / FE+](https://img.shields.io/badge/Device-Galaxy%20Tab%20S9%20FE%20%7C%20FE%2B-blueviolet.svg)](#supported-devices)
 [![Knox Safe](https://img.shields.io/badge/Knox-Untouched%20(0x0)-success.svg)](#-safety--security-model)
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-Donate-yellow.svg?logo=buy-me-a-coffee)](https://buymeacoffee.com/kavangcb29)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-red.svg?logo=ko-fi)](https://ko-fi.com/kavangcb29)
 [![PayPal](https://img.shields.io/badge/PayPal-Donate-00457C.svg?logo=paypal&logoColor=white)](https://paypal.me/KavanSudev)
 
-An intelligent, non-root debloater and performance accelerator designed specifically for the **Samsung Galaxy Tab S9 FE (SM-X510 / SM-X516B)** and **One UI 6+** devices. 
+An intelligent, non-root debloater and performance accelerator designed specifically for the **Samsung Galaxy Tab S9 FE (SM-X510 / SM-X516B)** and **One UI 6, 7, 8, 8.5, and One UI 9** devices. 
 
 Frees up **1.2 GB+ of RAM**, halts standby battery drain, eliminates Exynos 1380 micro-stutters, and safeguards **S Pen, Samsung Notes, and Samsung DeX**.
 
@@ -20,13 +20,13 @@ Frees up **1.2 GB+ of RAM**, halts standby battery drain, eliminates Exynos 1380
 ```
   ╔══════════════════════════════════════════════════════════════╗
   ║       SAMSUNG GALAXY TAB S9 FE DEBLOATER TOOLKIT             ║
-  ║       Tailored for One UI 6 / 6.1 / 7 & Exynos 1380          ║
+  ║       Tailored for One UI 6 / 7 / 8 / 8.5 / 9 & Exynos 1380  ║
   ║       Protects S Pen, Samsung Notes & DeX Multitasking       ║
   ╚══════════════════════════════════════════════════════════════╝
 
 ┌─[ CONNECTED DEVICE ]─────────────────────────────────────────
-│  Model: SM-X510 [★ Galaxy Tab S9 FE DETECTED]
-│  Android: 14 | One UI: 6.1 | Battery: 88%
+│  Model: SM-X510 [★ Galaxy Tab S9 FE (Wi-Fi) [India Variant] DETECTED]
+│  Android: 16 | One UI: 8.5 | Region: India (INS/INU) | Battery: 92%
 └──────────────────────────────────────────────────────────────
 ```
 
@@ -71,27 +71,45 @@ The following packages are explicitly marked **DANGER / CRITICAL** and protected
 
 ---
 
-## 🚀 Quick Start Guide
+## 🚀 Quick Start Guide (Setup Page)
 
-### 1. Enable USB Debugging on Your Tablet
-1. Open **Settings** on your Tab S9 FE.
+### 1. Enable Developer Options on Your Tablet
+1. Open **Settings** on your Galaxy Tab S9 FE.
 2. Go to **About tablet** ➔ **Software information**.
-3. Tap **Build number** **7 times** until you see *"Developer mode has been enabled"*.
-4. Return to main **Settings** ➔ scroll to the bottom and tap **Developer options**.
-5. Enable **USB debugging**.
+3. Tap **Build number** **7 times** rapidly until you see *"Developer mode has been enabled"*.
 
-### 2. Connect to PC
-1. Connect your tablet to your computer with a USB-C cable.
-2. Unlock the tablet screen.
-3. When prompted with *"Allow USB debugging?"*, check **"Always allow from this computer"** and tap **Allow**.
+### 2. Configure Samsung Auto Blocker (Crucial for One UI 6.1 / 7 / 8 / 8.5 / 9!)
+> [!IMPORTANT]
+> Samsung introduced **Auto Blocker** in One UI 6.0 and enforces it strictly in **One UI 6.1, 7.0, 8.0, and 8.5**. Auto Blocker blocks USB cable software commands and ADB by default.
+> 
+> If your tablet shows "No Device Connected" or ADB commands fail:
+> 1. Open **Settings** on your tablet.
+> 2. Tap **Security and privacy** ➔ **Auto Blocker**.
+> 3. Toggle Auto Blocker **OFF** (or turn off **"Maximum restrictions"** / **"Block software updates by USB cable"**).
+> 4. *(You can safely turn Auto Blocker back ON after you finish debloating.)*
 
-### 3. Launch the Toolkit
+### 3. Enable USB Debugging
+1. Return to **Settings** ➔ scroll to the very bottom and tap **Developer options**.
+2. Locate **USB debugging** and toggle it to **ON**.
+3. Tap **OK** on the confirmation prompt.
+
+### 4. Connect to PC & Authorize Tablet
+1. Connect your Tab S9 FE to your computer using a USB-C data cable.
+2. Unlock your tablet screen.
+3. When the prompt *"Allow USB debugging?"* appears, check **"Always allow from this computer"** and tap **Allow**.
+
+> [!NOTE]
+> **Indian Variant Verification (SM-X510 / SM-X516B - INS/INU):**
+> If you are running the Indian variant of the Galaxy Tab S9 FE on the latest **One UI 8.5** update, the toolkit automatically detects your device, identifies your CSC region (`INS`/`INU`), and includes tailored cleanup for Indian regional bloat (Glance lockscreen stories & ads, Samsung Pay Mini, regional app stubs).
+
+### 5. Launch the Toolkit
 
 #### Option A: Desktop GUI (Recommended)
 Double-click **`run.bat`** (or run in terminal):
 ```powershell
 python debloater.py --gui
 ```
+*Tip: Use the **📖 Setup Guide** tab in the GUI sidebar to run live connection diagnostics and verify your One UI version.*
 
 #### Option B: Terminal CLI
 Double-click **`run_cli.bat`** (or run in terminal):
@@ -119,12 +137,17 @@ If you ever want an uninstalled app back:
 
 ---
 
-## 📱 Supported Devices
+## 📱 Supported Devices & Firmware
 
-* **Samsung Galaxy Tab S9 FE** (`SM-X510`, `SM-X516B`)
-* **Samsung Galaxy Tab S9 FE+** (`SM-X610`, `SM-X616B`)
+* **Samsung Galaxy Tab S9 FE** (`SM-X510` Wi-Fi, `SM-X516B` 5G - Indian & Global variants)
+* **Samsung Galaxy Tab S9 FE+** (`SM-X610` Wi-Fi, `SM-X616B` 5G)
 * **Samsung Galaxy Tab S9 / S9+ / S9 Ultra** (`SM-X710`, `SM-X810`, `SM-X910`)
-* Compatible with **One UI 5.1.1**, **One UI 6.0**, **One UI 6.1**, and **One UI 7.0**.
+* **Firmware Compatibility**:
+  * **One UI 5.1.1** (Android 13)
+  * **One UI 6.0 & 6.1** (Android 14)
+  * **One UI 7.0 & 7.1** (Android 15)
+  * **One UI 8.0 & 8.5** (Android 16 - Current latest update on Indian Tab S9 FE)
+  * **One UI 9.0** (Future-ready architecture)
 
 ---
 

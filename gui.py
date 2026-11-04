@@ -201,7 +201,7 @@ class DebloaterGUI(tk.Tk):
         app_title = tk.Label(logo_row, text="TAB S9 FE", font=(FONT_FAMILY, 12, "bold"), fg=COLOR_TEXT_PRIMARY, bg=COLOR_SIDEBAR)
         app_title.pack(side=tk.LEFT)
 
-        app_subtitle = tk.Label(brand_box, text="Optimizer & Debloater", font=(FONT_FAMILY, 8), fg=COLOR_TEXT_MUTED, bg=COLOR_SIDEBAR)
+        app_subtitle = tk.Label(brand_box, text="One UI 6 - 8.5+ & 9 Ready", font=(FONT_FAMILY, 8), fg=COLOR_TEXT_MUTED, bg=COLOR_SIDEBAR)
         app_subtitle.pack(anchor="w", padx=(28, 0))
 
         # Divider
@@ -215,6 +215,7 @@ class DebloaterGUI(tk.Tk):
             ("packages", "📦  Package Manager"),
             ("restore", "🔄  Restore Center"),
             ("tweaks", "🚀  Hardware Tweaks"),
+            ("setup", "📖  Setup Guide"),
             ("logs", "📄  Activity & Logs")
         ]
 
@@ -236,7 +237,7 @@ class DebloaterGUI(tk.Tk):
         s_title = tk.Label(sponsor_box, text="Enjoying the speed?", font=(FONT_FAMILY, 8, "bold"), fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD)
         s_title.pack(anchor="w", padx=10, pady=(10, 2))
 
-        s_sub = tk.Label(sponsor_box, text="Support future One UI updates", font=(FONT_FAMILY, 7), fg=COLOR_TEXT_MUTED, bg=COLOR_CARD)
+        s_sub = tk.Label(sponsor_box, text="Support One UI 8.5 & 9 updates", font=(FONT_FAMILY, 7), fg=COLOR_TEXT_MUTED, bg=COLOR_CARD)
         s_sub.pack(anchor="w", padx=10, pady=(0, 8))
 
         btn_coffee = ModernButton(sponsor_box, text="☕ Support Developer", font=(FONT_FAMILY, 8, "bold"),
@@ -267,6 +268,8 @@ class DebloaterGUI(tk.Tk):
             self._render_restore_page()
         elif page_id == "tweaks":
             self._render_tweaks_page()
+        elif page_id == "setup":
+            self._render_setup_page()
         elif page_id == "logs":
             self._render_logs_page()
 
@@ -287,23 +290,33 @@ class DebloaterGUI(tk.Tk):
         right_box = tk.Frame(header_bar, bg=COLOR_BG_ROOT)
         right_box.pack(side=tk.RIGHT)
 
+        # Setup Guide Quick Button
+        btn_setup_quick = ModernButton(right_box, text="📖 Setup Guide", font=(FONT_FAMILY, 8, "bold"),
+                                       bg=COLOR_CARD, hover_bg=COLOR_CARD_HOVER, bd_color=COLOR_CARD_BORDER,
+                                       fg=COLOR_TEXT_SECONDARY, padx=10, pady=6,
+                                       command=lambda: self.switch_page("setup"))
+        btn_setup_quick.pack(side=tk.RIGHT, padx=(8, 0))
+
         # Refresh Button
         btn_refresh = ModernButton(right_box, text="↻ Refresh Device", font=(FONT_FAMILY, 8, "bold"),
                                    bg=COLOR_CARD, hover_bg=COLOR_CARD_HOVER, bd_color=COLOR_CARD_BORDER,
                                    fg=COLOR_TEXT_SECONDARY, padx=12, pady=6,
                                    command=self.async_refresh_device)
-        btn_refresh.pack(side=tk.RIGHT, padx=(10, 0))
+        btn_refresh.pack(side=tk.RIGHT, padx=(8, 0))
 
-        # Device Chip Badge
-        self.device_chip = tk.Frame(right_box, bg=COLOR_CARD, highlightbackground=COLOR_CARD_BORDER, highlightthickness=1)
+        # Device Chip Badge (Click to open Setup Guide when disconnected)
+        self.device_chip = tk.Frame(right_box, bg=COLOR_CARD, highlightbackground=COLOR_CARD_BORDER, highlightthickness=1, cursor="hand2")
         self.device_chip.pack(side=tk.RIGHT)
+        self.device_chip.bind("<Button-1>", lambda e: self.switch_page("setup") if not self.active_serial else None)
 
-        self.device_chip_dot = tk.Label(self.device_chip, text="●", font=(FONT_FAMILY, 10), fg=COLOR_ACCENT_AMBER, bg=COLOR_CARD)
+        self.device_chip_dot = tk.Label(self.device_chip, text="●", font=(FONT_FAMILY, 10), fg=COLOR_ACCENT_AMBER, bg=COLOR_CARD, cursor="hand2")
         self.device_chip_dot.pack(side=tk.LEFT, padx=(10, 6), pady=6)
+        self.device_chip_dot.bind("<Button-1>", lambda e: self.switch_page("setup") if not self.active_serial else None)
 
         self.device_chip_text = tk.Label(self.device_chip, text="Scanning for device...", font=(FONT_FAMILY, 8, "bold"),
-                                         fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD)
+                                         fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD, cursor="hand2")
         self.device_chip_text.pack(side=tk.LEFT, padx=(0, 12), pady=6)
+        self.device_chip_text.bind("<Button-1>", lambda e: self.switch_page("setup") if not self.active_serial else None)
 
     # =========================================================================
     # Page 1: Presets
@@ -742,7 +755,209 @@ class DebloaterGUI(tk.Tk):
         b_reboot.pack(anchor="w", padx=16, pady=(0, 14))
 
     # =========================================================================
-    # Page 5: Activity & Logs
+    # Page 5: Setup Guide (One UI 6, 7, 8, 8.5 & One UI 9)
+    # =========================================================================
+    def _render_setup_page(self):
+        self.page_title_lbl.configure(text="Device Setup & One UI Connection Guide")
+
+        canvas = tk.Canvas(self.content_frame, bg=COLOR_BG_ROOT, bd=0, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(self.content_frame, orient="vertical", command=canvas.yview)
+        scroll_content = tk.Frame(canvas, bg=COLOR_BG_ROOT)
+
+        scroll_content.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=scroll_content, anchor="nw", width=820)
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Header Intro Card
+        h_card = tk.Frame(scroll_content, bg=COLOR_CARD, highlightbackground=COLOR_CARD_BORDER, highlightthickness=1)
+        h_card.pack(fill=tk.X, pady=(4, 12), padx=2)
+
+        h_title = tk.Label(h_card, text="🚀 Samsung Galaxy Tab S9 FE Connection Setup", font=(FONT_FAMILY, 12, "bold"),
+                           fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD)
+        h_title.pack(anchor="w", padx=16, pady=(14, 4))
+
+        h_desc = tk.Label(h_card, text="Verified and tested for Samsung Galaxy Tab S9 FE (Wi-Fi SM-X510 & 5G SM-X516B) across all One UI versions.\nEngineered for One UI 8, One UI 8.5 (latest Indian variant update), and One UI 9 future-ready compatibility.",
+                          font=(FONT_FAMILY, 9), fg=COLOR_TEXT_SECONDARY, bg=COLOR_CARD, justify=tk.LEFT)
+        h_desc.pack(anchor="w", padx=16, pady=(0, 14))
+
+        # Step 1: Developer Options
+        s1 = tk.Frame(scroll_content, bg=COLOR_CARD, highlightbackground=COLOR_CARD_BORDER, highlightthickness=1)
+        s1.pack(fill=tk.X, pady=(0, 10), padx=2)
+
+        s1_head = tk.Frame(s1, bg=COLOR_CARD)
+        s1_head.pack(fill=tk.X, padx=16, pady=(12, 4))
+        tk.Label(s1_head, text="STEP 1", font=(FONT_FAMILY, 8, "bold"), fg="#60a5fa", bg="#1e293b", padx=6, pady=2).pack(side=tk.LEFT, padx=(0, 8))
+        tk.Label(s1_head, text="Enable Developer Options on Tablet", font=(FONT_FAMILY, 11, "bold"), fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD).pack(side=tk.LEFT)
+
+        s1_text = (
+            "1. Open Settings on your Galaxy Tab S9 FE.\n"
+            "2. Scroll down and tap 'About tablet' ➔ 'Software information'.\n"
+            "3. Tap 'Build number' 7 times rapidly.\n"
+            "4. Enter your lock PIN or Pattern if prompted. You will see: \"Developer mode has been enabled!\""
+        )
+        tk.Label(s1, text=s1_text, font=(FONT_FAMILY, 9), fg=COLOR_TEXT_SECONDARY, bg=COLOR_CARD, justify=tk.LEFT).pack(anchor="w", padx=16, pady=(0, 12))
+
+        # Step 2: Auto Blocker (Crucial for One UI 6.1 / 7 / 8 / 8.5 / 9)
+        s2 = tk.Frame(scroll_content, bg=COLOR_CARD, highlightbackground="#f59e0b", highlightthickness=1.5)
+        s2.pack(fill=tk.X, pady=(0, 10), padx=2)
+
+        s2_head = tk.Frame(s2, bg=COLOR_CARD)
+        s2_head.pack(fill=tk.X, padx=16, pady=(12, 4))
+        tk.Label(s2_head, text="CRUCIAL FOR ONE UI 8 / 8.5 / 9", font=(FONT_FAMILY, 8, "bold"), fg="#fbbf24", bg="#451a03", padx=6, pady=2).pack(side=tk.LEFT, padx=(0, 8))
+        tk.Label(s2_head, text="Configure Samsung Auto Blocker", font=(FONT_FAMILY, 11, "bold"), fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD).pack(side=tk.LEFT)
+
+        s2_text = (
+            "Samsung's 'Auto Blocker' (introduced in One UI 6.0 and enhanced in One UI 6.1, 7, 8 & 8.5) blocks USB cable commands by default.\n"
+            "If Auto Blocker is active, ADB commands and USB debugging will be blocked or greyed out:\n\n"
+            "• Open tablet Settings ➔ tap 'Security and privacy' ➔ tap 'Auto Blocker'.\n"
+            "• Turn Auto Blocker OFF (or toggle off 'Maximum restrictions' / 'Block software updates by USB cable').\n"
+            "• (You may safely re-enable Auto Blocker once debloating is complete!)"
+        )
+        tk.Label(s2, text=s2_text, font=(FONT_FAMILY, 9), fg=COLOR_TEXT_SECONDARY, bg=COLOR_CARD, justify=tk.LEFT).pack(anchor="w", padx=16, pady=(0, 12))
+
+        # Step 3: Enable USB Debugging
+        s3 = tk.Frame(scroll_content, bg=COLOR_CARD, highlightbackground=COLOR_CARD_BORDER, highlightthickness=1)
+        s3.pack(fill=tk.X, pady=(0, 10), padx=2)
+
+        s3_head = tk.Frame(s3, bg=COLOR_CARD)
+        s3_head.pack(fill=tk.X, padx=16, pady=(12, 4))
+        tk.Label(s3_head, text="STEP 3", font=(FONT_FAMILY, 8, "bold"), fg="#60a5fa", bg="#1e293b", padx=6, pady=2).pack(side=tk.LEFT, padx=(0, 8))
+        tk.Label(s3_head, text="Turn ON USB Debugging", font=(FONT_FAMILY, 11, "bold"), fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD).pack(side=tk.LEFT)
+
+        s3_text = (
+            "1. In Settings, scroll to the bottom and tap 'Developer options'.\n"
+            "2. Locate 'USB debugging' and toggle it to ON.\n"
+            "3. Tap 'OK' when prompted to allow USB debugging."
+        )
+        tk.Label(s3, text=s3_text, font=(FONT_FAMILY, 9), fg=COLOR_TEXT_SECONDARY, bg=COLOR_CARD, justify=tk.LEFT).pack(anchor="w", padx=16, pady=(0, 12))
+
+        # Step 4: Connect & Authorize
+        s4 = tk.Frame(scroll_content, bg=COLOR_CARD, highlightbackground=COLOR_CARD_BORDER, highlightthickness=1)
+        s4.pack(fill=tk.X, pady=(0, 10), padx=2)
+
+        s4_head = tk.Frame(s4, bg=COLOR_CARD)
+        s4_head.pack(fill=tk.X, padx=16, pady=(12, 4))
+        tk.Label(s4_head, text="STEP 4", font=(FONT_FAMILY, 8, "bold"), fg="#60a5fa", bg="#1e293b", padx=6, pady=2).pack(side=tk.LEFT, padx=(0, 8))
+        tk.Label(s4_head, text="Connect to PC & Authorize Tablet Screen", font=(FONT_FAMILY, 11, "bold"), fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD).pack(side=tk.LEFT)
+
+        s4_text = (
+            "1. Connect your Tab S9 FE to this PC using a USB-C data cable (the Samsung in-box cable works great).\n"
+            "2. Unlock your tablet screen.\n"
+            "3. A popup prompt saying \"Allow USB debugging?\" will appear on screen.\n"
+            "4. Check the box \"Always allow from this computer\" and tap Allow."
+        )
+        tk.Label(s4, text=s4_text, font=(FONT_FAMILY, 9), fg=COLOR_TEXT_SECONDARY, bg=COLOR_CARD, justify=tk.LEFT).pack(anchor="w", padx=16, pady=(0, 12))
+
+        # Step 5: Indian Variant & One UI 8.5 Compatibility
+        s5 = tk.Frame(scroll_content, bg=COLOR_CARD, highlightbackground="#10b981", highlightthickness=1)
+        s5.pack(fill=tk.X, pady=(0, 10), padx=2)
+
+        s5_head = tk.Frame(s5, bg=COLOR_CARD)
+        s5_head.pack(fill=tk.X, padx=16, pady=(12, 4))
+        tk.Label(s5_head, text="INDIAN VARIANT (INS/INU)", font=(FONT_FAMILY, 8, "bold"), fg="#34d399", bg="#064e3b", padx=6, pady=2).pack(side=tk.LEFT, padx=(0, 8))
+        tk.Label(s5_head, text="One UI 8.5 & Indian Firmware Specifics", font=(FONT_FAMILY, 11, "bold"), fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD).pack(side=tk.LEFT)
+
+        s5_text = (
+            "• Specifically optimized for Tab S9 FE Indian variants: SM-X510 (Wi-Fi) and SM-X516B (5G) with INS / INU CSC.\n"
+            "• Fully tested for One UI 8.5 (the latest official update) and engineered to be One UI 9 future-proof.\n"
+            "• Includes curated rules to remove Indian carrier/regional bloat (Glance lockscreen feed ads, Samsung Pay Mini, regional app stubs).\n"
+            "• S Pen latency, Samsung Notes, Samsung Keyboard handwriting, and DeX desktop mode are 100% safeguarded."
+        )
+        tk.Label(s5, text=s5_text, font=(FONT_FAMILY, 9), fg=COLOR_TEXT_SECONDARY, bg=COLOR_CARD, justify=tk.LEFT).pack(anchor="w", padx=16, pady=(0, 12))
+
+        # Step 6: Interactive Diagnostics Card
+        diag_card = tk.Frame(scroll_content, bg=COLOR_CARD, highlightbackground=COLOR_CARD_BORDER, highlightthickness=1)
+        diag_card.pack(fill=tk.X, pady=(0, 14), padx=2)
+
+        d_head = tk.Frame(diag_card, bg=COLOR_CARD)
+        d_head.pack(fill=tk.X, padx=16, pady=(14, 6))
+
+        tk.Label(d_head, text="🔍 Connection Health & One UI Diagnostics", font=(FONT_FAMILY, 11, "bold"),
+                 fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD).pack(side=tk.LEFT)
+
+        self.setup_status_badge = tk.Label(d_head, text="CHECKING...", font=(FONT_FAMILY, 8, "bold"),
+                                           fg=COLOR_ACCENT_AMBER, bg=COLOR_CARD_LIGHT, padx=8, pady=3)
+        self.setup_status_badge.pack(side=tk.RIGHT)
+
+        self.diag_info_frame = tk.Frame(diag_card, bg=COLOR_CARD_LIGHT)
+        self.diag_info_frame.pack(fill=tk.X, padx=16, pady=(4, 12))
+
+        self.diag_labels = {}
+        fields = [
+            ("Model:", "model_val"),
+            ("One UI Version:", "oneui_val"),
+            ("Android OS:", "android_val"),
+            ("Region / CSC:", "region_val"),
+            ("Connection Status:", "status_val")
+        ]
+        for idx, (label_txt, key) in enumerate(fields):
+            r = tk.Frame(self.diag_info_frame, bg=COLOR_CARD_LIGHT)
+            r.pack(fill=tk.X, padx=10, pady=2)
+            tk.Label(r, text=label_txt, font=(FONT_FAMILY, 8, "bold"), fg=COLOR_TEXT_MUTED, bg=COLOR_CARD_LIGHT, width=18, anchor="w").pack(side=tk.LEFT)
+            val_lbl = tk.Label(r, text="—", font=(FONT_FAMILY, 8), fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD_LIGHT, anchor="w")
+            val_lbl.pack(side=tk.LEFT)
+            self.diag_labels[key] = val_lbl
+
+        # Action Buttons Row
+        act_row = tk.Frame(diag_card, bg=COLOR_CARD)
+        act_row.pack(fill=tk.X, padx=16, pady=(0, 14))
+
+        btn_test = ModernButton(act_row, text="⚡ Test Tablet Connection Now", font=(FONT_FAMILY, 8, "bold"),
+                                bg=COLOR_ACCENT_BLUE, hover_bg=COLOR_ACCENT_BLUE_H, padx=14, pady=6,
+                                command=self._run_setup_diagnostics)
+        btn_test.pack(side=tk.LEFT, padx=(0, 10))
+
+        btn_go_presets = ModernButton(act_row, text="🚀 Open 1-Click Presets", font=(FONT_FAMILY, 8, "bold"),
+                                      bg=COLOR_CARD_LIGHT, hover_bg=COLOR_CARD_HOVER, fg=COLOR_TEXT_PRIMARY,
+                                      padx=14, pady=6, command=lambda: self.switch_page("presets"))
+        btn_go_presets.pack(side=tk.LEFT)
+
+        # Trigger initial diagnostic UI refresh
+        self._refresh_setup_diagnostics_ui()
+
+    def _run_setup_diagnostics(self):
+        self.log("Running comprehensive tablet connection test for One UI 8.5 / 9...")
+        self.async_refresh_device()
+        self.after(600, self._refresh_setup_diagnostics_ui)
+
+    def _refresh_setup_diagnostics_ui(self):
+        if not hasattr(self, "diag_labels") or not self.diag_labels["status_val"].winfo_exists():
+            return
+
+        if self.active_serial and self.device_info and self.device_info.get("status") != "unauthorized":
+            info = self.device_info
+            market = info.get("market_name", "Samsung Device")
+            model = info.get("model", "Unknown")
+            oneui = info.get("oneui_version", "Unknown")
+            android_v = info.get("android_version", "Unknown")
+            region = info.get("region", info.get("csc", "Global"))
+
+            self.diag_labels["model_val"].configure(text=f"{market} ({model})", fg=COLOR_ACCENT_EMERALD)
+            self.diag_labels["oneui_val"].configure(text=f"One UI {oneui} (Fully Compatible)", fg=COLOR_ACCENT_BLUE)
+            self.diag_labels["android_val"].configure(text=f"Android {android_v}", fg=COLOR_TEXT_PRIMARY)
+            self.diag_labels["region_val"].configure(text=str(region), fg=COLOR_TEXT_PRIMARY)
+            self.diag_labels["status_val"].configure(text="Connected & Authorized (Ready!)", fg=COLOR_ACCENT_EMERALD)
+            self.setup_status_badge.configure(text="● CONNECTED", fg=COLOR_ACCENT_EMERALD, bg="#064e3b")
+        elif self.active_serial and self.device_info.get("status") == "unauthorized":
+            self.diag_labels["model_val"].configure(text=f"Device [{self.active_serial}]", fg=COLOR_ACCENT_AMBER)
+            self.diag_labels["oneui_val"].configure(text="Check Tablet Screen", fg=COLOR_ACCENT_AMBER)
+            self.diag_labels["android_val"].configure(text="—", fg=COLOR_TEXT_MUTED)
+            self.diag_labels["region_val"].configure(text="—", fg=COLOR_TEXT_MUTED)
+            self.diag_labels["status_val"].configure(text="Unauthorized: Unlock screen & tap Allow", fg=COLOR_ACCENT_AMBER)
+            self.setup_status_badge.configure(text="● UNAUTHORIZED", fg=COLOR_ACCENT_AMBER, bg="#451a03")
+        else:
+            self.diag_labels["model_val"].configure(text="No device detected", fg=COLOR_ACCENT_ROSE)
+            self.diag_labels["oneui_val"].configure(text="—", fg=COLOR_TEXT_MUTED)
+            self.diag_labels["android_val"].configure(text="—", fg=COLOR_TEXT_MUTED)
+            self.diag_labels["region_val"].configure(text="—", fg=COLOR_TEXT_MUTED)
+            self.diag_labels["status_val"].configure(text="Disconnected: Check USB cable & Auto Blocker", fg=COLOR_ACCENT_ROSE)
+            self.setup_status_badge.configure(text="● DISCONNECTED", fg=COLOR_ACCENT_ROSE, bg="#4c0519")
+
+    # =========================================================================
+    # Page 6: Activity & Logs
     # =========================================================================
     def _render_logs_page(self):
         self.page_title_lbl.configure(text="Execution Console & Logs")
@@ -857,7 +1072,8 @@ class DebloaterGUI(tk.Tk):
             txt = f"{market} ({model}) • One UI {oneui}{batt_str}"
             self.device_chip_dot.configure(fg=COLOR_ACCENT_EMERALD)
             self.device_chip_text.configure(text=txt)
-            self.log(f"Device ready: {market} [{model}] running One UI {oneui}")
+            region_str = f" [{info.get('region')}]" if info.get("region") and info.get("region") != "Unknown" else ""
+            self.log(f"Device ready: {market} [{model}]{region_str} running One UI {oneui} (Android {info.get('android_version')})")
         elif state == "unauthorized":
             self.device_chip_dot.configure(fg=COLOR_ACCENT_AMBER)
             self.device_chip_text.configure(text="Unlock Tablet & Allow USB Debugging")
@@ -867,11 +1083,13 @@ class DebloaterGUI(tk.Tk):
             self.device_chip_text.configure(text="No Device Connected")
             self.log("No device detected. Connect Tab S9 FE with USB Debugging enabled.", "WARN")
 
-        # Auto refresh package lists if on those pages
+        # Auto refresh package lists or diagnostics if on those pages
         if self.current_page == "packages":
             self.after(0, self._filter_packages)
         elif self.current_page == "restore":
             self.after(0, self._refresh_restore_table)
+        elif self.current_page == "setup":
+            self.after(0, self._refresh_setup_diagnostics_ui)
 
     # =========================================================================
     # Execution Logic
@@ -1038,7 +1256,7 @@ class DebloaterGUI(tk.Tk):
         lbl = tk.Label(modal, text="☕ Support & Donations", font=(FONT_FAMILY, 12, "bold"), fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD)
         lbl.pack(pady=(18, 4))
 
-        sub = tk.Label(modal, text="If this toolkit helped make your Tab S9 FE snappier,\nconsider supporting maintenance and future updates!",
+        sub = tk.Label(modal, text="If this toolkit helped optimize your Tab S9 FE on One UI 8.5,\nconsider supporting maintenance and future One UI 9 updates!",
                        font=(FONT_FAMILY, 8), fg=COLOR_TEXT_SECONDARY, bg=COLOR_CARD, justify=tk.CENTER)
         sub.pack(pady=(0, 14))
 

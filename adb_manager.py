@@ -174,19 +174,38 @@ class ADBManager:
         code, out, _ = self.run_shell("getprop ro.product.name", serial=serial)
         prod_name = out.strip().lower() if code == 0 else ""
 
+        # CSC / Sales code (e.g. INS, INU for Indian variant)
+        code_csc, out_csc, _ = self.run_shell("getprop ro.csc.sales_code", serial=serial)
+        if code_csc != 0 or not out_csc.strip():
+            code_csc, out_csc, _ = self.run_shell("getprop ro.boot.sales_code", serial=serial)
+        csc_val = out_csc.strip().upper() if code_csc == 0 and out_csc else ""
+        if csc_val:
+            info["csc"] = csc_val
+            if csc_val in ("INS", "INU"):
+                info["region"] = "India (INS/INU)"
+                info["is_indian_variant"] = True
+            else:
+                info["region"] = csc_val
+
         # Check Tab S9 FE recognition
         # SM-X510: Tab S9 FE Wi-Fi
-        # SM-X516: Tab S9 FE 5G
+        # SM-X516 / SM-X516B: Tab S9 FE 5G (SM-X516B is the Indian 5G variant)
         # SM-X610: Tab S9 FE+ Wi-Fi
-        # SM-X616: Tab S9 FE+ 5G
+        # SM-X616 / SM-X616B: Tab S9 FE+ 5G
         model_upper = info["model"].upper()
-        if "X510" in model_upper or "X516" in model_upper:
-            info["market_name"] = "Galaxy Tab S9 FE"
+        if "X510" in model_upper:
+            info["market_name"] = "Galaxy Tab S9 FE (Wi-Fi)"
             info["is_tab_s9_fe"] = True
-        elif "X610" in model_upper or "X616" in model_upper:
-            info["market_name"] = "Galaxy Tab S9 FE+"
+        elif "X516" in model_upper:
+            info["market_name"] = "Galaxy Tab S9 FE (5G)"
             info["is_tab_s9_fe"] = True
-        elif "gts9fe" in prod_name:
+        elif "X610" in model_upper:
+            info["market_name"] = "Galaxy Tab S9 FE+ (Wi-Fi)"
+            info["is_tab_s9_fe"] = True
+        elif "X616" in model_upper:
+            info["market_name"] = "Galaxy Tab S9 FE+ (5G)"
+            info["is_tab_s9_fe"] = True
+        elif "gts9fe" in prod_name or "gts9pfe" in prod_name or "X51" in model_upper or "X61" in model_upper:
             info["market_name"] = "Galaxy Tab S9 FE Series"
             info["is_tab_s9_fe"] = True
         elif "X710" in model_upper or "X716" in model_upper:
@@ -198,27 +217,16 @@ class ADBManager:
         else:
             info["market_name"] = f"Samsung ({info['model']})"
 
+        if info.get("is_indian_variant"):
+            info["market_name"] += " [India Variant]"
+
         # Android Version
         code, out, _ = self.run_shell("getprop ro.build.version.release", serial=serial)
         if code == 0 and out:
             info["android_version"] = out.strip()
 
-        # One UI Version (stored in ro.build.version.sep or ro.build.version.sem)
-        # 150000 = One UI 6.0, 150100 = One UI 6.1, 160000 = One UI 7.0
-        code, out, _ = self.run_shell("getprop ro.build.version.sep", serial=serial)
-        if code == 0 and out.isdigit():
-            val = int(out)
-            major = (val // 10000) - 9
-            minor = (val % 10000) // 100
-            info["oneui_version"] = f"{major}.{minor}" if major > 0 else out
-        else:
-            # Fallback to sem
-            code, out_sem, _ = self.run_shell("getprop ro.build.version.sem", serial=serial)
-            if code == 0 and out_sem.isdigit():
-                val = int(out_sem)
-                major = (val // 10000) - 9
-                minor = (val % 10000) // 100
-                info["oneui_version"] = f"{major}.{minor}" if major > 0 else out_sem
+        # One UI Version (supports One UI 5, 6, 7, 8, 8.5, and 9+)
+        info["oneui_version"] = self._detect_oneui_version(serial=serial)
 
         # Battery percentage
         code, out, _ = self.run_shell("dumpsys battery", serial=serial)
@@ -228,6 +236,59 @@ class ADBManager:
                 info["battery"] = f"{level_match.group(1)}%"
 
         return info
+
+    def _detect_oneui_version(self, serial: Optional[str] = None) -> str:
+        """
+        Detects Samsung One UI version across One UI 5, 6, 7, 8, 8.5, and 9+.
+        Checks ro.build.version.oneui, ro.build.version.sep, ro.build.version.sem, and ro.sem.version.
+        """
+        def parse_raw(raw_str: str, is_sep: bool = False) -> Optional[str]:
+            raw = raw_str.strip()
+            if not raw:
+                return None
+            if raw.isdigit():
+                val = int(raw)
+                major = (val // 10000) - (9 if is_sep else 0)
+                rem = val % 10000
+                minor = rem // 100
+                sub = rem % 100
+                if major > 0:
+                    return f"{major}.{minor}.{sub}" if sub > 0 else f"{major}.{minor}"
+            elif "." in raw:
+                m = re.search(r"(\d+(?:\.\d+)?)", raw)
+                if m:
+                    return m.group(1)
+            return None
+
+        # 1. Try ro.build.version.oneui (e.g. 80500 for One UI 8.5, 80000 for 8.0, 90000 for 9.0)
+        code, out, _ = self.run_shell("getprop ro.build.version.oneui", serial=serial)
+        if code == 0 and out.strip():
+            ver = parse_raw(out, is_sep=False)
+            if ver:
+                return ver
+
+        # 2. Try ro.build.version.sep (SEP version offset by 9: 150000=6.0, 150100=6.1, 160000=7.0, 170000=8.0, 170500=8.5, 180000=9.0)
+        code, out, _ = self.run_shell("getprop ro.build.version.sep", serial=serial)
+        if code == 0 and out.strip():
+            ver = parse_raw(out, is_sep=True)
+            if ver:
+                return ver
+
+        # 3. Fallback to ro.build.version.sem
+        code, out_sem, _ = self.run_shell("getprop ro.build.version.sem", serial=serial)
+        if code == 0 and out_sem.strip():
+            ver = parse_raw(out_sem, is_sep=True)
+            if ver:
+                return ver
+
+        # 4. Fallback to ro.sem.version
+        code, out_rsem, _ = self.run_shell("getprop ro.sem.version", serial=serial)
+        if code == 0 and out_rsem.strip():
+            ver = parse_raw(out_rsem, is_sep=True)
+            if ver:
+                return ver
+
+        return "Unknown"
 
     def get_installed_packages(self, serial: Optional[str] = None) -> List[str]:
         """Returns list of currently active package names for user 0."""
@@ -269,7 +330,10 @@ class ADBManager:
         return sorted(list(set(disabled + uninstalled_user0)))
 
     def uninstall_package(self, package_id: str, keep_data: bool = True, serial: Optional[str] = None) -> Tuple[bool, str]:
-        """Uninstalls package for user 0 (keeps system apk). Fully reversible via install-existing."""
+        """
+        Uninstalls package for user 0 (keeps system apk). Fully reversible via restore_package.
+        Features multi-layer fallback for One UI 7 / 8 / 8.5 / 9 compatibility.
+        """
         kd_flag = "-k " if keep_data else ""
         cmd = f"pm uninstall {kd_flag}--user 0 {package_id}"
         code, stdout, stderr = self.run_shell(cmd, serial=serial)
@@ -279,8 +343,25 @@ class ADBManager:
             return True, "Successfully uninstalled for current user."
         elif "not installed" in combined:
             return True, "Package was already not installed."
-        else:
-            return False, stdout or stderr or "Unknown failure"
+
+        # Fallback 1: If -k failed (newer Android versions sometimes reject -k for system apks)
+        if keep_data:
+            cmd2 = f"pm uninstall --user 0 {package_id}"
+            code2, stdout2, stderr2 = self.run_shell(cmd2, serial=serial)
+            comb2 = f"{stdout2} {stderr2}".lower()
+            if "success" in comb2:
+                return True, "Successfully uninstalled for current user."
+            elif "not installed" in comb2:
+                return True, "Package was already not installed."
+
+        # Fallback 2: If uninstall is restricted by Knox or Device Policy on One UI 8.5+, disable the package
+        cmd3 = f"pm disable-user --user 0 {package_id}"
+        code3, stdout3, stderr3 = self.run_shell(cmd3, serial=serial)
+        comb3 = f"{stdout3} {stderr3}".lower()
+        if "new state: disabled" in comb3 or "disabled-user" in comb3 or code3 == 0:
+            return True, "Package disabled for user 0 (uninstall restricted by system)."
+
+        return False, stdout or stderr or "Unknown failure"
 
     def disable_package(self, package_id: str, serial: Optional[str] = None) -> Tuple[bool, str]:
         """Disables package for user 0. App stops running immediately; reversible via pm enable."""
@@ -292,18 +373,73 @@ class ADBManager:
         return False, stdout or stderr or "Failed to disable package"
 
     def restore_package(self, package_id: str, serial: Optional[str] = None) -> Tuple[bool, str]:
-        """Re-enables and reinstalls an uninstalled or disabled package for user 0."""
-        # Try both install-existing and pm enable
+        """
+        Re-enables and reinstalls an uninstalled or disabled package for user 0.
+        Compatible across all One UI & Android versions (One UI 5 - 9+).
+        """
+        # 1. Try cmd package install-existing
         cmd_install = f"cmd package install-existing {package_id}"
         code_i, out_i, err_i = self.run_shell(cmd_install, serial=serial)
 
+        # 2. Fallback pm install-existing --user 0
+        if "installed" not in f"{out_i}".lower() and code_i != 0:
+            cmd_pm = f"pm install-existing --user 0 {package_id}"
+            self.run_shell(cmd_pm, serial=serial)
+
+        # 3. Enable package for user 0
         cmd_enable = f"pm enable --user 0 {package_id}"
         code_e, out_e, err_e = self.run_shell(cmd_enable, serial=serial)
+
+        # 4. Fallback cmd package enable-user
+        if code_e != 0:
+            self.run_shell(f"cmd package enable-user --user 0 {package_id}", serial=serial)
 
         combined = f"{out_i} {err_i} {out_e} {err_e}".lower()
         if "installed" in combined or "enabled" in combined or "success" in combined or code_i == 0 or code_e == 0:
             return True, "Successfully restored/enabled package."
         return False, f"Install: {out_i or err_i} | Enable: {out_e or err_e}"
+
+    def diagnose_device(self, serial: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Runs comprehensive connection & environment diagnostics for the Setup Guide.
+        """
+        diag = {
+            "adb_installed": self.is_adb_installed(),
+            "devices": self.get_connected_devices(),
+            "active_device": None,
+            "device_info": None,
+            "diagnostic_summary": []
+        }
+        
+        if not diag["adb_installed"]:
+            diag["diagnostic_summary"].append("ADB executable is missing or not initialized.")
+            return diag
+
+        if not diag["devices"]:
+            diag["diagnostic_summary"].append("No ADB devices detected over USB.")
+            diag["diagnostic_summary"].append("Check: USB-C cable, Developer options > USB Debugging.")
+            diag["diagnostic_summary"].append("Samsung Auto Blocker: Settings -> Security and privacy -> Auto Blocker -> Turn OFF.")
+            return diag
+
+        unauth = [d for d in diag["devices"] if d["status"] == "unauthorized"]
+        if unauth:
+            diag["diagnostic_summary"].append(f"Device [{unauth[0]['serial']}] is UNAUTHORIZED.")
+            diag["diagnostic_summary"].append("Unlock tablet screen and tap 'Always allow from this computer'.")
+            return diag
+
+        active = [d for d in diag["devices"] if d["status"] == "device"]
+        if active:
+            target_serial = serial or active[0]["serial"]
+            diag["active_device"] = target_serial
+            info = self.get_device_info(target_serial)
+            diag["device_info"] = info
+            diag["diagnostic_summary"].append(f"Connected: {info['market_name']} ({info['model']})")
+            diag["diagnostic_summary"].append(f"One UI Version: {info['oneui_version']} | Android: {info['android_version']}")
+            if info.get("csc"):
+                diag["diagnostic_summary"].append(f"Region / Sales Code (CSC): {info['csc']}")
+            diag["diagnostic_summary"].append("Device Status: 100% Ready for Optimization!")
+        
+        return diag
 
     def set_animation_scale(self, scale: float = 0.5, serial: Optional[str] = None) -> bool:
         """Sets window, transition, and animator scales (e.g. 0.5 for instant responsiveness)."""

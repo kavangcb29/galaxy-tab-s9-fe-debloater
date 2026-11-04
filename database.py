@@ -1,6 +1,6 @@
 """
 Samsung Tab S9 FE Debloater - Package Database & Catalog
-Curated specifically for Samsung Galaxy Tab S9 FE (SM-X510 / SM-X516B) and One UI 6 / 6.1 / 7.
+Curated specifically for Samsung Galaxy Tab S9 FE (SM-X510 / SM-X516B) and One UI 6 / 6.1 / 7 / 8 / 8.5 / 9.
 """
 
 from typing import Dict, List, Any
@@ -322,6 +322,20 @@ PACKAGES: List[Dict[str, Any]] = [
         "risk": "safe",
         "description": "Background shared playback broadcast service."
     },
+    {
+        "id": "com.glance.internet",
+        "name": "Glance on Samsung (India Lockscreen Feed)",
+        "category": "samsung_bloat",
+        "risk": "safe",
+        "description": "Lock screen news and sponsored feed pre-installed on Indian firmware. Safe to remove."
+    },
+    {
+        "id": "com.samsung.android.rapps",
+        "name": "Samsung Regional App Recommendations (India)",
+        "category": "samsung_bloat",
+        "risk": "safe",
+        "description": "Regional app suggestions and promotional recommendations stub found on Indian devices."
+    },
 
     # ==========================================
     # 7. GOS (Game Optimizing Service) & Gaming Hub (SAFE)
@@ -493,11 +507,25 @@ PACKAGES: List[Dict[str, Any]] = [
         "description": "Samsung payment and loyalty card wallet."
     },
     {
+        "id": "com.samsung.android.spaymini",
+        "name": "Samsung Pay Mini (India Variant)",
+        "category": "samsung_optional",
+        "risk": "optional",
+        "description": "Lightweight payment client pre-installed on Indian variant Galaxy tablets."
+    },
+    {
         "id": "com.samsung.android.themestore",
         "name": "Galaxy Themes",
         "category": "samsung_optional",
         "risk": "optional",
         "description": "Samsung theme engine and wallpaper store."
+    },
+    {
+        "id": "com.samsung.android.homemode",
+        "name": "Daily Board (Desk Dock Mode)",
+        "category": "samsung_optional",
+        "risk": "optional",
+        "description": "Display mode showing clock, weather, and photos while tablet is charging."
     },
 
     # =========================================================================

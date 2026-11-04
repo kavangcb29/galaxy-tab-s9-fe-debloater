@@ -10,9 +10,9 @@ assignees: ''
 A clear and concise description of what the bug is.
 
 **Device Information:**
-- Device: [e.g. Samsung Galaxy Tab S9 FE (SM-X510)]
-- Android Version: [e.g. Android 14]
-- One UI Version: [e.g. One UI 6.1]
+- Device: [e.g. Samsung Galaxy Tab S9 FE (SM-X510 / SM-X516B Indian Variant)]
+- Android Version: [e.g. Android 16]
+- One UI Version: [e.g. One UI 8.5 / One UI 9]
 - Mode: [e.g. GUI or CLI]
 
 **To Reproduce**

@@ -7,7 +7,7 @@ Thank you for your interest in improving this project! We welcome contributions 
 ## 🛠️ How to Contribute
 
 ### 1. Adding or Updating Packages
-All package definitions live in [`database.py`](database.py). If you find a new bloatware package or a One UI 6 / 6.1 / 7 package that needs classification:
+All package definitions live in [`database.py`](database.py). If you find a new bloatware package or a One UI 6 / 7 / 8 / 8.5 / 9 package that needs classification:
 1. Open [`database.py`](database.py).
 2. Add the package to the `PACKAGES` list:
    ```python

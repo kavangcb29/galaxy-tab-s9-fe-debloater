@@ -13,7 +13,7 @@ assignees: ''
 Application Name
 
 **Observed On Device**
-[e.g. Galaxy Tab S9 FE (SM-X510), One UI 6.1]
+[e.g. Galaxy Tab S9 FE (SM-X510 / SM-X516B Indian Variant), One UI 8.5]
 
 **Recommended Risk Level**
 - [ ] Safe (Zero impact on system, safe to remove)

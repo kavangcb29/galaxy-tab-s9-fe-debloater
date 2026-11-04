@@ -83,7 +83,7 @@ class TabS9FEDebloater:
         banner = """
   ╔══════════════════════════════════════════════════════════════╗
   ║       SAMSUNG GALAXY TAB S9 FE DEBLOATER TOOLKIT             ║
-  ║       Tailored for One UI 6 / 6.1 / 7 & Exynos 1380          ║
+  ║       Tailored for One UI 6 / 7 / 8 / 8.5 / 9 & Exynos 1380  ║
   ║       Protects S Pen, Samsung Notes & DeX Multitasking       ║
   ╚══════════════════════════════════════════════════════════════╝
 """
@@ -91,12 +91,14 @@ class TabS9FEDebloater:
 
     def print_device_card(self):
         if not self.active_serial:
-            print(colorize("┌─[ DEVICE STATUS ]────────────────────────────────────────────", Colors.YELLOW))
-            print(colorize("│  Status: NO DEVICE CONNECTED", Colors.RED))
+            print(colorize("┌─[ DEVICE SETUP & STATUS ]────────────────────────────────────", Colors.YELLOW))
+            print(colorize("│  Status: NO DEVICE DETECTED", Colors.RED))
             print("│  1. Enable 'Developer Options' on your tablet:")
             print("│     Settings -> About Tablet -> Software Info -> Tap 'Build Number' 7 times")
-            print("│  2. Enable 'USB Debugging' in Settings -> Developer Options")
-            print("│  3. Connect tablet via USB-C cable and tap 'Allow' on tablet screen.")
+            print("│  2. Crucial for One UI 8 / 8.5 / 9: Disable Samsung 'Auto Blocker':")
+            print("│     Settings -> Security and privacy -> Auto Blocker -> Turn OFF")
+            print("│  3. Enable 'USB Debugging' in Settings -> Developer Options")
+            print("│  4. Connect tablet via USB-C cable and tap 'Allow' on tablet screen.")
             print(colorize("└──────────────────────────────────────────────────────────────", Colors.YELLOW))
             return
 
@@ -114,7 +116,9 @@ class TabS9FEDebloater:
 
         print(colorize("┌─[ CONNECTED DEVICE ]─────────────────────────────────────────", Colors.GREEN))
         print(f"│  Model: {colorize(self.device_info.get('model', 'Unknown'), Colors.BOLD)}{badge}")
-        print(f"│  Android: {self.device_info.get('android_version', 'Unknown')} | One UI: {self.device_info.get('oneui_version', 'Unknown')}")
+        reg = self.device_info.get("region", "")
+        reg_str = f" | Region: {reg}" if reg and reg != "Unknown" else ""
+        print(f"│  Android: {self.device_info.get('android_version', 'Unknown')} | One UI: {self.device_info.get('oneui_version', 'Unknown')}{reg_str}")
         print(f"│  Battery: {self.device_info.get('battery', 'Unknown')} | Serial: {self.active_serial}")
         print(colorize("└──────────────────────────────────────────────────────────────", Colors.GREEN))
 
