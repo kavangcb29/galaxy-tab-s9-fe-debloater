@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.env
+.venv/
+env/
+venv/
+
+# Platform Tools & Binaries (Auto-downloaded by script)
+bin/platform-tools/
+bin/*.zip
+*.zip
+
+# Backups & Local User Device Data
+backups/*.json
+!backups/.gitkeep
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+*.swp
+*~

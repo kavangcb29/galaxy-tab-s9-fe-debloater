@@ -1,0 +1,123 @@
+{
+  "presets": [
+    {
+      "id": "safe_debixby_perf",
+      "name": "Safe & Clean + De-Bixby + Exynos Performance Turbo",
+      "description": "The complete all-in-one setup: Safe bloatware removal + complete De-Bixby suite + Exynos 1380 unthrottling (disables GOS throttle, Gaming Hub, Wi-Fi telephony, telemetry, Meta/Facebook). S Pen, Samsung Notes & DeX remain 100% protected.",
+      "packages": [
+        "com.samsung.android.rubin.app",
+        "com.samsung.android.knox.analytics.uploader",
+        "com.sec.android.diagmonagent",
+        "com.samsung.android.da.daagent",
+        "com.samsung.android.bbc.bbcagent",
+        "com.google.android.feedback",
+        "com.google.android.gms.location.history",
+        "com.samsung.android.ipsgeofence",
+        "com.facebook.katana",
+        "com.facebook.system",
+        "com.facebook.appmanager",
+        "com.facebook.services",
+        "com.microsoft.office.officehubrow",
+        "com.samsung.android.aremoji",
+        "com.samsung.android.aremojieditor",
+        "com.samsung.android.arzone",
+        "com.samsung.android.livestickers",
+        "com.sec.android.mimage.avatarstickers",
+        "com.samsung.android.app.camera.sticker.facearavatar.preload",
+        "com.samsung.android.stickercenter",
+        "com.samsung.android.kidsinstaller",
+        "com.sec.android.app.kidshome",
+        "com.samsung.android.app.tips",
+        "com.samsung.ecomm",
+        "com.samsung.sree",
+        "com.samsung.android.dynamiclock",
+        "com.samsung.safetyinformation",
+        "com.samsung.android.app.watchmanagerstub",
+        "com.samsung.android.forest",
+        "com.samsung.android.app.sharelive",
+        "com.samsung.android.bixby.agent",
+        "com.samsung.android.bixby.wakeup",
+        "com.samsung.android.bixby.service",
+        "com.samsung.android.visionintelligence",
+        "com.samsung.android.bixbyvision.framework",
+        "com.samsung.android.app.spage",
+        "com.samsung.android.game.gos",
+        "com.samsung.android.game.gamehome",
+        "com.samsung.android.game.gametools",
+        "com.android.calllogbackup",
+        "com.hiya.star",
+        "com.samsung.android.smartcallprovider"
+      ]
+    },
+    {
+      "id": "safe_recommended",
+      "name": "Safe & Clean Baseline (Keeps Bixby)",
+      "description": "Safe debloat of Meta/Facebook, telemetry, AR Emoji junk, Samsung Kids, and promotional bloat. Keeps S Pen, DeX, Bixby, Notes, and Samsung ecosystem 100% intact.",
+      "packages": [
+        "com.samsung.android.rubin.app",
+        "com.samsung.android.knox.analytics.uploader",
+        "com.sec.android.diagmonagent",
+        "com.samsung.android.da.daagent",
+        "com.samsung.android.bbc.bbcagent",
+        "com.google.android.feedback",
+        "com.google.android.gms.location.history",
+        "com.samsung.android.ipsgeofence",
+        "com.facebook.katana",
+        "com.facebook.system",
+        "com.facebook.appmanager",
+        "com.facebook.services",
+        "com.microsoft.office.officehubrow",
+        "com.samsung.android.aremoji",
+        "com.samsung.android.aremojieditor",
+        "com.samsung.android.arzone",
+        "com.samsung.android.livestickers",
+        "com.sec.android.mimage.avatarstickers",
+        "com.samsung.android.app.camera.sticker.facearavatar.preload",
+        "com.samsung.android.stickercenter",
+        "com.samsung.android.kidsinstaller",
+        "com.sec.android.app.kidshome",
+        "com.samsung.android.app.tips",
+        "com.samsung.ecomm",
+        "com.samsung.sree",
+        "com.samsung.android.dynamiclock",
+        "com.samsung.safetyinformation",
+        "com.samsung.android.app.watchmanagerstub",
+        "com.samsung.android.forest",
+        "com.samsung.android.app.sharelive"
+      ]
+    },
+    {
+      "id": "debixby",
+      "name": "De-Bixby Only",
+      "description": "Removes all Bixby voice services, background hotword listening, Bixby Vision, and the Samsung Free swipe-left screen.",
+      "packages": [
+        "com.samsung.android.bixby.agent",
+        "com.samsung.android.bixby.wakeup",
+        "com.samsung.android.bixby.service",
+        "com.samsung.android.visionintelligence",
+        "com.samsung.android.bixbyvision.framework",
+        "com.samsung.android.app.spage"
+      ]
+    },
+    {
+      "id": "wifi_telephony",
+      "name": "Wi-Fi Tablet Telephony Cleaner",
+      "description": "Strips phone dialer and spam detection background services that are useless on Wi-Fi models (SM-X510).",
+      "packages": [
+        "com.android.calllogbackup",
+        "com.hiya.star",
+        "com.samsung.android.smartcallprovider"
+      ]
+    },
+    {
+      "id": "degoogle_optional",
+      "name": "Google Bloatware Removal",
+      "description": "Removes non-essential Google apps (Google TV, Google Meet, YouTube Music). Keeps Google Play Store and Core Services intact.",
+      "packages": [
+        "com.google.android.videos",
+        "com.google.android.apps.tachyon",
+        "com.google.android.apps.youtube.music"
+      ]
+    }
+  ]
+}
