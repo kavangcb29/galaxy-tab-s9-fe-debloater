@@ -1,6 +1,7 @@
 """
-Samsung Tab S9 FE Debloater - Modern Graphical User Interface (GUI)
-Built with Python Tkinter/ttk with a sleek dark theme and responsive threading.
+Samsung Galaxy Tab S9 FE Debloater Toolkit - Modern GUI
+High-quality, dark-themed native desktop interface inspired by modern design systems.
+Includes High-DPI support, sidebar navigation, visual risk badges, and non-blocking threading.
 """
 
 import os
@@ -10,450 +11,498 @@ import time
 import webbrowser
 from pathlib import Path
 
-# Ensure UTF-8 output on Windows terminals
+# Enable High-DPI awareness on Windows for razor-sharp typography
+if sys.platform == "win32":
+    try:
+        import ctypes
+        ctypes.windll.shcore.SetProcessDpiAwareness(1)
+    except Exception:
+        try:
+            ctypes.windll.user32.SetProcessDPIAware()
+        except Exception:
+            pass
+
+# Ensure UTF-8 output
 if hasattr(sys.stdout, "reconfigure"):
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
         pass
-if hasattr(sys.stderr, "reconfigure"):
-    try:
-        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
-    except Exception:
-        pass
 
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
-from typing import Dict, List, Optional, Set, Any
+from tkinter import ttk, messagebox
 
 from adb_manager import ADBManager
 import database
 import utils
 
-# Modern Dark Theme Palette
-BG_DARK = "#121417"
-BG_CARD = "#1a1f26"
-BG_CARD_LIGHT = "#242b35"
-BORDER_COLOR = "#2d3748"
-TEXT_PRIMARY = "#f7fafc"
-TEXT_SECONDARY = "#a0aec0"
-TEXT_MUTED = "#718096"
-ACCENT_BLUE = "#3182ce"
-ACCENT_BLUE_HOVER = "#2b6cb0"
-ACCENT_GREEN = "#38a169"
-ACCENT_YELLOW = "#d69e2e"
-ACCENT_RED = "#e53e3e"
+# =========================================================================
+# Premium Dark Theme Palette (Linear / One UI Dark Inspired)
+# =========================================================================
+COLOR_BG_ROOT       = "#0b0d13"   # Deep Obsidian
+COLOR_SIDEBAR       = "#11141d"   # Sidebar Surface
+COLOR_SIDEBAR_HOVER = "#181d2a"   # Sidebar Item Hover
+COLOR_SIDEBAR_ACTIVE= "#1e2435"   # Sidebar Item Active
+COLOR_CARD          = "#151822"   # Card Surface
+COLOR_CARD_BORDER   = "#222736"   # Subtle Card Border
+COLOR_CARD_HOVER    = "#1a1f2c"   # Card Hover State
+COLOR_CARD_LIGHT    = "#1c2130"   # Secondary Card / Input Background
+
+COLOR_TEXT_PRIMARY   = "#f8fafc"   # High-contrast White
+COLOR_TEXT_SECONDARY = "#94a3b8"   # Slate Gray
+COLOR_TEXT_MUTED     = "#64748b"   # Muted Meta Text
+
+COLOR_ACCENT_BLUE    = "#3b82f6"   # Electric Blue
+COLOR_ACCENT_BLUE_H  = "#2563eb"   # Electric Blue Hover
+COLOR_ACCENT_PURPLE  = "#8b5cf6"   # Accent Purple
+COLOR_ACCENT_EMERALD = "#10b981"   # Safe Green
+COLOR_ACCENT_AMBER   = "#f59e0b"   # Caution Amber
+COLOR_ACCENT_ROSE    = "#ef4444"   # Danger Rose / Red
+
+FONT_FAMILY = "Segoe UI"
+
+
+class ModernButton(tk.Label):
+    """A sleek, custom-styled button with smooth hover feedback and hand cursor."""
+    def __init__(self, parent, text, command=None, bg=COLOR_ACCENT_BLUE, fg="#ffffff",
+                 hover_bg=COLOR_ACCENT_BLUE_H, font=(FONT_FAMILY, 9, "bold"), padx=14, pady=7,
+                 bd_color=None, **kwargs):
+        super().__init__(parent, text=text, font=font, bg=bg, fg=fg, cursor="hand2",
+                         padx=padx, pady=pady, **kwargs)
+        self.command = command
+        self.default_bg = bg
+        self.hover_bg = hover_bg
+        self.is_disabled = False
+
+        if bd_color:
+            self.configure(highlightbackground=bd_color, highlightthickness=1)
+
+        self.bind("<Enter>", self._on_enter)
+        self.bind("<Leave>", self._on_leave)
+        self.bind("<Button-1>", self._on_click)
+
+    def _on_enter(self, e):
+        if not self.is_disabled:
+            self.configure(bg=self.hover_bg)
+
+    def _on_leave(self, e):
+        if not self.is_disabled:
+            self.configure(bg=self.default_bg)
+
+    def _on_click(self, e):
+        if not self.is_disabled and self.command:
+            self.command()
+
+    def set_disabled(self, disabled: bool):
+        self.is_disabled = disabled
+        if disabled:
+            self.configure(bg="#202430", fg=COLOR_TEXT_MUTED, cursor="arrow")
+        else:
+            self.configure(bg=self.default_bg, fg="#ffffff", cursor="hand2")
+
 
 class DebloaterGUI(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Samsung Galaxy Tab S9 FE Debloater Toolkit")
-        self.geometry("1020x720")
-        self.minsize(860, 580)
-        self.configure(bg=BG_DARK)
+        self.title("Samsung Galaxy Tab S9 FE Toolkit")
+        self.geometry("1100x740")
+        self.minsize(980, 620)
+        self.configure(bg=COLOR_BG_ROOT)
 
         self.adb = ADBManager()
-        self.device_info: Dict[str, Any] = {}
-        self.active_serial: Optional[str] = None
-        self.installed_packages: Set[str] = set()
-        
-        # Package Selection State: package_id -> tk.BooleanVar
-        self.package_vars: Dict[str, tk.BooleanVar] = {}
-        
-        # Setup modern TTK Styles
-        self._setup_styles()
-        
-        # Build UI layout
-        self._build_header()
-        self._build_notebook()
-        self._build_console()
+        self.device_info = {}
+        self.active_serial = None
+        self.installed_packages = set()
 
-        # Start background device connection monitor
-        self.after(300, self.async_refresh_device)
+        # Selection state
+        self.package_vars = {}
+        self.current_page = "presets"
+        self.log_drawer_visible = False
 
-    def _setup_styles(self):
+        # Setup modern ttk styles
+        self._setup_ttk_styles()
+
+        # Build Main Layout (Sidebar + Content Container + Bottom Activity Bar)
+        self._build_layout()
+
+        # Start device connection scan in background
+        self.after(200, self.async_refresh_device)
+
+    def _setup_ttk_styles(self):
         style = ttk.Style()
         style.theme_use("clam")
 
-        # Configure Base Styles
-        style.configure(".", background=BG_DARK, foreground=TEXT_PRIMARY, font=("Segoe UI", 9))
-        
-        # Tabs Style
-        style.configure("TNotebook", background=BG_DARK, borderwidth=0)
-        style.configure("TNotebook.Tab", 
-                        background=BG_CARD, 
-                        foreground=TEXT_SECONDARY, 
-                        padding=[16, 8],
-                        font=("Segoe UI", 10, "bold"),
+        # Treeview styling for Package Manager
+        style.configure("Custom.Treeview",
+                        background=COLOR_CARD,
+                        foreground=COLOR_TEXT_PRIMARY,
+                        fieldbackground=COLOR_CARD,
+                        rowheight=32,
+                        font=(FONT_FAMILY, 9),
                         borderwidth=0)
-        style.map("TNotebook.Tab", 
-                  background=[("selected", BG_CARD_LIGHT), ("active", BG_CARD_LIGHT)],
-                  foreground=[("selected", TEXT_PRIMARY), ("active", TEXT_PRIMARY)])
-
-        # Treeview / Table
-        style.configure("Treeview", 
-                        background=BG_CARD, 
-                        foreground=TEXT_PRIMARY, 
-                        fieldbackground=BG_CARD,
-                        rowheight=26,
-                        font=("Segoe UI", 9),
+        style.configure("Custom.Treeview.Heading",
+                        background=COLOR_CARD_LIGHT,
+                        foreground=COLOR_TEXT_SECONDARY,
+                        font=(FONT_FAMILY, 9, "bold"),
+                        padding=[10, 8],
                         borderwidth=0)
-        style.configure("Treeview.Heading",
-                        background=BG_CARD_LIGHT,
-                        foreground=TEXT_PRIMARY,
-                        font=("Segoe UI", 9, "bold"),
-                        padding=[8, 6],
-                        borderwidth=0)
-        style.map("Treeview", background=[("selected", ACCENT_BLUE)])
+        style.map("Custom.Treeview",
+                  background=[("selected", "#222a3d")],
+                  foreground=[("selected", "#ffffff")])
 
-        # Checkbutton
-        style.configure("TCheckbutton", background=BG_CARD, foreground=TEXT_PRIMARY)
-        style.map("TCheckbutton", background=[("active", BG_CARD)])
+        # Scrollbar styling
+        style.configure("Vertical.TScrollbar",
+                        background=COLOR_SIDEBAR,
+                        troughcolor=COLOR_BG_ROOT,
+                        borderwidth=0,
+                        arrowsize=11)
+        style.map("Vertical.TScrollbar",
+                  background=[("active", COLOR_CARD_LIGHT)])
 
-        # Combobox
-        style.configure("TCombobox", 
-                        fieldbackground=BG_CARD_LIGHT, 
-                        background=BG_CARD_LIGHT, 
-                        foreground=TEXT_PRIMARY,
-                        arrowcolor=TEXT_PRIMARY)
+    def _build_layout(self):
+        # 1. Left Sidebar
+        self.sidebar_frame = tk.Frame(self, bg=COLOR_SIDEBAR, width=220, highlightbackground=COLOR_CARD_BORDER, highlightthickness=1)
+        self.sidebar_frame.pack(side=tk.LEFT, fill=tk.Y)
+        self.sidebar_frame.pack_propagate(False)
 
-    def _build_header(self):
-        self.header_frame = tk.Frame(self, bg=BG_CARD, height=85, highlightbackground=BORDER_COLOR, highlightthickness=1)
-        self.header_frame.pack(fill=tk.X, padx=14, pady=(14, 8))
-        self.header_frame.pack_propagate(False)
+        self._build_sidebar()
 
-        # Title & Subtitle Container
-        left_box = tk.Frame(self.header_frame, bg=BG_CARD)
-        left_box.pack(side=tk.LEFT, padx=16, pady=10)
+        # 2. Main Work Area (Right Side)
+        self.main_container = tk.Frame(self, bg=COLOR_BG_ROOT)
+        self.main_container.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
-        title_lbl = tk.Label(left_box, text="SAMSUNG TAB S9 FE DEBLOATER", font=("Segoe UI", 13, "bold"), fg=TEXT_PRIMARY, bg=BG_CARD)
-        title_lbl.pack(anchor="w")
+        # Top Header Bar (Device Status + Refresh + Sponsor)
+        self._build_top_header()
 
-        subtitle_lbl = tk.Label(left_box, text="One UI 6+ Exynos 1380 Optimizer • S Pen & DeX Safe Protection", 
-                                font=("Segoe UI", 8), fg=TEXT_SECONDARY, bg=BG_CARD)
-        subtitle_lbl.pack(anchor="w")
+        # Dynamic Content View Area
+        self.content_frame = tk.Frame(self.main_container, bg=COLOR_BG_ROOT)
+        self.content_frame.pack(fill=tk.BOTH, expand=True, padx=22, pady=(10, 8))
 
-        # Right Device Status Card
-        self.device_badge_frame = tk.Frame(self.header_frame, bg=BG_CARD_LIGHT, highlightbackground=BORDER_COLOR, highlightthickness=1, padx=12, pady=6)
-        self.device_badge_frame.pack(side=tk.RIGHT, padx=16, pady=10)
+        # Bottom Activity & Status Bar (with collapsible Log Drawer)
+        self._build_bottom_bar()
 
-        self.device_status_lbl = tk.Label(self.device_badge_frame, text="Detecting device...", font=("Segoe UI", 9, "bold"), fg=ACCENT_YELLOW, bg=BG_CARD_LIGHT)
-        self.device_status_lbl.pack(anchor="e")
+        # Initialize and show default page
+        self.switch_page("presets")
 
-        self.device_detail_lbl = tk.Label(self.device_badge_frame, text="Please connect via USB with USB Debugging enabled", font=("Segoe UI", 8), fg=TEXT_MUTED, bg=BG_CARD_LIGHT)
-        self.device_detail_lbl.pack(anchor="e")
+    # =========================================================================
+    # Sidebar
+    # =========================================================================
+    def _build_sidebar(self):
+        # App Branding Header
+        brand_box = tk.Frame(self.sidebar_frame, bg=COLOR_SIDEBAR)
+        brand_box.pack(fill=tk.X, padx=16, pady=(18, 20))
 
-        # Refresh button
-        self.btn_refresh = tk.Button(self.header_frame, text="↻ Refresh", font=("Segoe UI", 9), 
-                                     bg=BG_CARD_LIGHT, fg=TEXT_PRIMARY, activebackground=BORDER_COLOR,
-                                     activeforeground=TEXT_PRIMARY, relief=tk.FLAT, bd=0, padx=10, pady=4,
-                                     command=self.async_refresh_device)
-        self.btn_refresh.pack(side=tk.RIGHT, padx=(0, 6))
+        logo_row = tk.Frame(brand_box, bg=COLOR_SIDEBAR)
+        logo_row.pack(fill=tk.X)
 
-        # Buy Me a Coffee / Support button
-        self.btn_support = tk.Button(self.header_frame, text="☕ Support", font=("Segoe UI", 9, "bold"),
-                                     bg="#d97706", fg="#ffffff", activebackground="#b45309",
-                                     activeforeground="#ffffff", relief=tk.FLAT, bd=0, padx=10, pady=4,
-                                     command=self._show_support_modal)
-        self.btn_support.pack(side=tk.RIGHT, padx=(0, 8))
+        icon_badge = tk.Label(logo_row, text="⚡", font=(FONT_FAMILY, 14), fg=COLOR_ACCENT_BLUE, bg=COLOR_SIDEBAR)
+        icon_badge.pack(side=tk.LEFT, padx=(0, 8))
 
-    def _show_support_modal(self):
-        modal = tk.Toplevel(self)
-        modal.title("Support the Project")
-        modal.geometry("380x270")
-        modal.configure(bg=BG_CARD)
-        modal.resizable(False, False)
-        modal.transient(self)
-        modal.grab_set()
+        app_title = tk.Label(logo_row, text="TAB S9 FE", font=(FONT_FAMILY, 12, "bold"), fg=COLOR_TEXT_PRIMARY, bg=COLOR_SIDEBAR)
+        app_title.pack(side=tk.LEFT)
 
-        lbl = tk.Label(modal, text="☕ Support & Donations", font=("Segoe UI", 12, "bold"), fg=TEXT_PRIMARY, bg=BG_CARD)
-        lbl.pack(pady=(16, 4))
+        app_subtitle = tk.Label(brand_box, text="Optimizer & Debloater", font=(FONT_FAMILY, 8), fg=COLOR_TEXT_MUTED, bg=COLOR_SIDEBAR)
+        app_subtitle.pack(anchor="w", padx=(28, 0))
 
-        sub = tk.Label(modal, text="If this toolkit helped optimize your Tab S9 FE,\nconsider supporting maintenance and future One UI updates!", 
-                       font=("Segoe UI", 8), fg=TEXT_SECONDARY, bg=BG_CARD, justify=tk.CENTER)
-        sub.pack(pady=(0, 14))
+        # Divider
+        div = tk.Frame(self.sidebar_frame, bg=COLOR_CARD_BORDER, height=1)
+        div.pack(fill=tk.X, padx=14, pady=(0, 14))
 
-        btn_bmac = tk.Button(modal, text="☕ Buy Me a Coffee", font=("Segoe UI", 9, "bold"),
-                             bg="#f59e0b", fg="#000000", relief=tk.FLAT, bd=0, padx=12, pady=5, width=28,
-                             command=lambda: [webbrowser.open("https://buymeacoffee.com/kavangcb29"), modal.destroy()])
-        btn_bmac.pack(pady=4)
+        # Navigation Menu Items
+        self.nav_buttons = {}
+        nav_items = [
+            ("presets", "⚡  1-Click Presets"),
+            ("packages", "📦  Package Manager"),
+            ("restore", "🔄  Restore Center"),
+            ("tweaks", "🚀  Hardware Tweaks"),
+            ("logs", "📄  Activity & Logs")
+        ]
 
-        btn_kofi = tk.Button(modal, text="❤️ Ko-fi Support", font=("Segoe UI", 9, "bold"),
-                             bg="#e53e3e", fg="#ffffff", relief=tk.FLAT, bd=0, padx=12, pady=5, width=28,
-                             command=lambda: [webbrowser.open("https://ko-fi.com/kavangcb29"), modal.destroy()])
-        btn_kofi.pack(pady=4)
+        for page_id, label in nav_items:
+            btn = tk.Label(self.sidebar_frame, text=label, font=(FONT_FAMILY, 9, "bold"),
+                           fg=COLOR_TEXT_SECONDARY, bg=COLOR_SIDEBAR, anchor="w",
+                           padx=16, pady=10, cursor="hand2")
+            btn.pack(fill=tk.X, padx=10, pady=2)
+            btn.bind("<Button-1>", lambda e, pid=page_id: self.switch_page(pid))
+            self.nav_buttons[page_id] = btn
 
-        btn_paypal = tk.Button(modal, text="💳 PayPal (Direct)", font=("Segoe UI", 9, "bold"),
-                               bg="#0070ba", fg="#ffffff", relief=tk.FLAT, bd=0, padx=12, pady=5, width=28,
-                               command=lambda: [webbrowser.open("https://paypal.me/KavanSudev"), modal.destroy()])
-        btn_paypal.pack(pady=4)
+        # Sidebar Spacer
+        tk.Frame(self.sidebar_frame, bg=COLOR_SIDEBAR).pack(fill=tk.BOTH, expand=True)
 
-    def _build_notebook(self):
-        self.notebook = ttk.Notebook(self)
-        self.notebook.pack(fill=tk.BOTH, expand=True, padx=14, pady=6)
+        # Bottom Sidebar: Support / Sponsor Banner
+        sponsor_box = tk.Frame(self.sidebar_frame, bg=COLOR_CARD, highlightbackground=COLOR_CARD_BORDER, highlightthickness=1)
+        sponsor_box.pack(fill=tk.X, padx=12, pady=14)
 
-        # Tabs
-        self.tab_presets = tk.Frame(self.notebook, bg=BG_DARK)
-        self.tab_packages = tk.Frame(self.notebook, bg=BG_DARK)
-        self.tab_restore = tk.Frame(self.notebook, bg=BG_DARK)
-        self.tab_tweaks = tk.Frame(self.notebook, bg=BG_DARK)
+        s_title = tk.Label(sponsor_box, text="Enjoying the speed?", font=(FONT_FAMILY, 8, "bold"), fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD)
+        s_title.pack(anchor="w", padx=10, pady=(10, 2))
 
-        self.notebook.add(self.tab_presets, text="   1-Click Presets   ")
-        self.notebook.add(self.tab_packages, text="   Custom Package Manager   ")
-        self.notebook.add(self.tab_restore, text="   Restore Center   ")
-        self.notebook.add(self.tab_tweaks, text="   Tab S9 FE Tweaks   ")
+        s_sub = tk.Label(sponsor_box, text="Support future One UI updates", font=(FONT_FAMILY, 7), fg=COLOR_TEXT_MUTED, bg=COLOR_CARD)
+        s_sub.pack(anchor="w", padx=10, pady=(0, 8))
 
-        self._populate_presets_tab()
-        self._populate_packages_tab()
-        self._populate_restore_tab()
-        self._populate_tweaks_tab()
+        btn_coffee = ModernButton(sponsor_box, text="☕ Support Developer", font=(FONT_FAMILY, 8, "bold"),
+                                  bg="#d97706", hover_bg="#b45309", padx=8, pady=5,
+                                  command=self._show_support_modal)
+        btn_coffee.pack(fill=tk.X, padx=10, pady=(0, 10))
 
-    def _build_console(self):
-        console_frame = tk.Frame(self, bg=BG_CARD, height=130, highlightbackground=BORDER_COLOR, highlightthickness=1)
-        console_frame.pack(fill=tk.X, padx=14, pady=(6, 14))
-        console_frame.pack_propagate(False)
+    def switch_page(self, page_id: str):
+        self.current_page = page_id
 
-        top_bar = tk.Frame(console_frame, bg=BG_CARD)
-        top_bar.pack(fill=tk.X, padx=10, pady=(4, 2))
+        # Update sidebar visual selection
+        for pid, btn in self.nav_buttons.items():
+            if pid == page_id:
+                btn.configure(bg=COLOR_SIDEBAR_ACTIVE, fg=COLOR_TEXT_PRIMARY)
+            else:
+                btn.configure(bg=COLOR_SIDEBAR, fg=COLOR_TEXT_SECONDARY)
 
-        c_title = tk.Label(top_bar, text="EXECUTION LOGS & ADB CONSOLE", font=("Segoe UI", 8, "bold"), fg=TEXT_MUTED, bg=BG_CARD)
-        c_title.pack(side=tk.LEFT)
+        # Clear Content View
+        for child in self.content_frame.winfo_children():
+            child.destroy()
 
-        btn_clear = tk.Button(top_bar, text="Clear Logs", font=("Segoe UI", 7), bg=BG_CARD_LIGHT, fg=TEXT_SECONDARY,
-                              relief=tk.FLAT, bd=0, command=self.clear_log)
-        btn_clear.pack(side=tk.RIGHT)
+        # Render selected page
+        if page_id == "presets":
+            self._render_presets_page()
+        elif page_id == "packages":
+            self._render_packages_page()
+        elif page_id == "restore":
+            self._render_restore_page()
+        elif page_id == "tweaks":
+            self._render_tweaks_page()
+        elif page_id == "logs":
+            self._render_logs_page()
 
-        self.log_text = tk.Text(console_frame, bg="#0d0f12", fg="#38ef7d", font=("Consolas", 8),
-                                bd=0, padx=8, pady=4, state=tk.DISABLED, wrap=tk.CHAR)
-        self.log_text.pack(fill=tk.BOTH, expand=True, padx=8, pady=(0, 6))
+    # =========================================================================
+    # Top Header Bar
+    # =========================================================================
+    def _build_top_header(self):
+        header_bar = tk.Frame(self.main_container, bg=COLOR_BG_ROOT, height=60)
+        header_bar.pack(fill=tk.X, padx=22, pady=(16, 4))
+        header_bar.pack_propagate(False)
 
-    def log(self, message: str, level: str = "INFO"):
-        timestamp = time.strftime("%H:%M:%S")
-        formatted = f"[{timestamp}] [{level}] {message}\n"
-        self.log_text.configure(state=tk.NORMAL)
-        self.log_text.insert(tk.END, formatted)
-        self.log_text.see(tk.END)
-        self.log_text.configure(state=tk.DISABLED)
+        # Left Page Title & Breadcrumb
+        self.page_title_lbl = tk.Label(header_bar, text="Optimization Presets", font=(FONT_FAMILY, 15, "bold"),
+                                       fg=COLOR_TEXT_PRIMARY, bg=COLOR_BG_ROOT)
+        self.page_title_lbl.pack(side=tk.LEFT)
 
-    def clear_log(self):
-        self.log_text.configure(state=tk.NORMAL)
-        self.log_text.delete("1.0", tk.END)
-        self.log_text.configure(state=tk.DISABLED)
+        # Right Action & Status Container
+        right_box = tk.Frame(header_bar, bg=COLOR_BG_ROOT)
+        right_box.pack(side=tk.RIGHT)
 
-    # ==========================================
-    # Device Detection & Monitoring
-    # ==========================================
-    def async_refresh_device(self):
-        def worker():
-            self.log("Scanning for connected Android devices via ADB...")
-            if not self.adb.is_adb_installed():
-                self.log("ADB executable not found. Downloading Google platform-tools...")
-                try:
-                    self.adb.download_platform_tools()
-                    self.log("Google platform-tools downloaded and ready!")
-                except Exception as e:
-                    self.log(f"Failed to auto-download ADB: {e}", "ERROR")
-                    self._update_device_ui_disconnected()
-                    return
+        # Refresh Button
+        btn_refresh = ModernButton(right_box, text="↻ Refresh Device", font=(FONT_FAMILY, 8, "bold"),
+                                   bg=COLOR_CARD, hover_bg=COLOR_CARD_HOVER, bd_color=COLOR_CARD_BORDER,
+                                   fg=COLOR_TEXT_SECONDARY, padx=12, pady=6,
+                                   command=self.async_refresh_device)
+        btn_refresh.pack(side=tk.RIGHT, padx=(10, 0))
 
-            devices = self.adb.get_connected_devices()
-            if not devices:
-                self._update_device_ui_disconnected()
-                return
+        # Device Chip Badge
+        self.device_chip = tk.Frame(right_box, bg=COLOR_CARD, highlightbackground=COLOR_CARD_BORDER, highlightthickness=1)
+        self.device_chip.pack(side=tk.RIGHT)
 
-            active = [d for d in devices if d["status"] == "device"]
-            if not active:
-                first = devices[0]
-                self._update_device_ui_unauthorized(first["serial"], first["status"])
-                return
+        self.device_chip_dot = tk.Label(self.device_chip, text="●", font=(FONT_FAMILY, 10), fg=COLOR_ACCENT_AMBER, bg=COLOR_CARD)
+        self.device_chip_dot.pack(side=tk.LEFT, padx=(10, 6), pady=6)
 
-            serial = active[0]["serial"]
-            info = self.adb.get_device_info(serial)
-            installed = set(self.adb.get_installed_packages(serial))
-            
-            self.device_info = info
-            self.active_serial = serial
-            self.installed_packages = installed
+        self.device_chip_text = tk.Label(self.device_chip, text="Scanning for device...", font=(FONT_FAMILY, 8, "bold"),
+                                         fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD)
+        self.device_chip_text.pack(side=tk.LEFT, padx=(0, 12), pady=6)
 
-            self._update_device_ui_connected(info)
-            self._refresh_package_list_view()
-            self._refresh_restore_list_view()
+    # =========================================================================
+    # Page 1: Presets
+    # =========================================================================
+    def _render_presets_page(self):
+        self.page_title_lbl.configure(text="Optimization Presets")
 
-        threading.Thread(target=worker, daemon=True).start()
-
-    def _update_device_ui_disconnected(self):
-        self.device_status_lbl.configure(text="No Device Connected", fg=ACCENT_RED)
-        self.device_detail_lbl.configure(text="Connect Tab S9 FE with USB Debugging enabled")
-        self.log("No device detected. Ensure USB Debugging is ON in Developer Options.", "WARN")
-
-    def _update_device_ui_unauthorized(self, serial: str, status: str):
-        self.device_status_lbl.configure(text=f"Device: {status.upper()}", fg=ACCENT_YELLOW)
-        self.device_detail_lbl.configure(text="Unlock tablet screen & tap 'Always allow from this computer'")
-        self.log(f"Device [{serial}] is unauthorized. Check tablet screen for prompt.", "WARN")
-
-    def _update_device_ui_connected(self, info: Dict[str, Any]):
-        market = info.get("market_name", "Samsung Device")
-        model = info.get("model", "")
-        android_v = info.get("android_version", "?")
-        oneui_v = info.get("oneui_version", "?")
-        battery = info.get("battery", "?")
-
-        status_txt = f"✓ Connected: {market} ({model})"
-        detail_txt = f"Android {android_v} | One UI {oneui_v} | Battery: {battery}"
-        
-        self.device_status_lbl.configure(text=status_txt, fg=ACCENT_GREEN)
-        self.device_detail_lbl.configure(text=detail_txt)
-        self.log(f"Connected to {market} [{model}] running One UI {oneui_v} (Android {android_v}).")
-
-    # ==========================================
-    # Tab 1: Presets View
-    # ==========================================
-    def _populate_presets_tab(self):
         presets = utils.load_presets()
 
-        desc_lbl = tk.Label(self.tab_presets, text="Quick-start optimization presets tailored for Samsung tablets:",
-                            font=("Segoe UI", 10), fg=TEXT_SECONDARY, bg=BG_DARK)
-        desc_lbl.pack(anchor="w", padx=16, pady=(14, 8))
+        # Canvas container for smooth scrolling
+        canvas = tk.Canvas(self.content_frame, bg=COLOR_BG_ROOT, bd=0, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(self.content_frame, orient="vertical", command=canvas.yview)
+        scroll_content = tk.Frame(canvas, bg=COLOR_BG_ROOT)
 
-        canvas = tk.Canvas(self.tab_presets, bg=BG_DARK, bd=0, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(self.tab_presets, orient="vertical", command=canvas.yview)
-        scroll_frame = tk.Frame(canvas, bg=BG_DARK)
-
-        scroll_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=scroll_frame, anchor="nw", width=960)
+        scroll_content.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=scroll_content, anchor="nw", width=820)
         canvas.configure(yscrollcommand=scrollbar.set)
 
-        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(16, 0), pady=6)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y, padx=(0, 16), pady=6)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        for preset in presets:
-            self._create_preset_card(scroll_frame, preset)
+        # Featured Preset Card (Safe & Clean + De-Bixby + Exynos Performance Turbo)
+        if presets:
+            featured = presets[0]
+            self._render_featured_preset_card(scroll_content, featured)
 
-    def _create_preset_card(self, parent: tk.Widget, preset: Dict[str, Any]):
-        card = tk.Frame(parent, bg=BG_CARD, highlightbackground=BORDER_COLOR, highlightthickness=1)
-        card.pack(fill=tk.X, expand=True, pady=6, padx=4)
+        # Other Presets in a clean list
+        section_lbl = tk.Label(scroll_content, text="ADDITIONAL PRESET PROFILES", font=(FONT_FAMILY, 9, "bold"),
+                               fg=COLOR_TEXT_MUTED, bg=COLOR_BG_ROOT)
+        section_lbl.pack(anchor="w", pady=(18, 8), padx=2)
 
-        header = tk.Frame(card, bg=BG_CARD)
-        header.pack(fill=tk.X, padx=12, pady=(10, 4))
+        for preset in presets[1:]:
+            self._render_standard_preset_card(scroll_content, preset)
 
-        title = tk.Label(header, text=preset["name"], font=("Segoe UI", 11, "bold"), fg=TEXT_PRIMARY, bg=BG_CARD)
-        title.pack(side=tk.LEFT)
+    def _render_featured_preset_card(self, parent, preset):
+        card = tk.Frame(parent, bg=COLOR_CARD, highlightbackground="#3b82f6", highlightthickness=1.5)
+        card.pack(fill=tk.X, pady=(4, 12), padx=2)
 
-        count_badge = tk.Label(header, text=f"{len(preset['packages'])} packages", font=("Segoe UI", 8),
-                               fg=ACCENT_BLUE, bg=BG_CARD_LIGHT, padx=8, pady=2)
-        count_badge.pack(side=tk.RIGHT)
+        # Top Badge Bar
+        top_row = tk.Frame(card, bg=COLOR_CARD)
+        top_row.pack(fill=tk.X, padx=16, pady=(14, 6))
 
-        desc = tk.Label(card, text=preset["description"], font=("Segoe UI", 9), fg=TEXT_SECONDARY, bg=BG_CARD,
-                        wraplength=700, justify=tk.LEFT)
-        desc.pack(anchor="w", padx=12, pady=(0, 10))
+        badge = tk.Label(top_row, text="★  RECOMMENDED FOR TAB S9 FE", font=(FONT_FAMILY, 8, "bold"),
+                         fg="#60a5fa", bg="#1e293b", padx=8, pady=3)
+        badge.pack(side=tk.LEFT)
 
-        action_row = tk.Frame(card, bg=BG_CARD)
-        action_row.pack(fill=tk.X, padx=12, pady=(0, 10))
+        pkg_pill = tk.Label(top_row, text=f"{len(preset['packages'])} packages targeted", font=(FONT_FAMILY, 8),
+                            fg=COLOR_TEXT_MUTED, bg=COLOR_CARD)
+        pkg_pill.pack(side=tk.RIGHT)
 
-        # Mode Selector
+        # Title & Subtitle
+        title = tk.Label(card, text=preset["name"], font=(FONT_FAMILY, 13, "bold"), fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD)
+        title.pack(anchor="w", padx=16, pady=(2, 4))
+
+        desc = tk.Label(card, text=preset["description"], font=(FONT_FAMILY, 9), fg=COLOR_TEXT_SECONDARY,
+                        bg=COLOR_CARD, wraplength=760, justify=tk.LEFT)
+        desc.pack(anchor="w", padx=16, pady=(0, 12))
+
+        # Highlights Row
+        pill_row = tk.Frame(card, bg=COLOR_CARD)
+        pill_row.pack(fill=tk.X, padx=16, pady=(0, 14))
+
+        pills = [
+            ("⚡ Exynos 1380 GOS Unthrottled", COLOR_ACCENT_EMERALD),
+            ("🔇 De-Bixby Standby Battery Saver", COLOR_ACCENT_BLUE),
+            ("🔒 S Pen, Notes & DeX 100% Protected", "#a855f7"),
+            ("📧 Microsoft Outlook Preserved", COLOR_TEXT_MUTED)
+        ]
+        for p_text, p_color in pills:
+            p_lbl = tk.Label(pill_row, text=p_text, font=(FONT_FAMILY, 8, "bold"),
+                             fg=p_color, bg=COLOR_CARD_LIGHT, padx=8, pady=3)
+            p_lbl.pack(side=tk.LEFT, padx=(0, 8))
+
+        # Bottom Action Divider
+        tk.Frame(card, bg=COLOR_CARD_BORDER, height=1).pack(fill=tk.X)
+
+        action_box = tk.Frame(card, bg=COLOR_CARD_LIGHT)
+        action_box.pack(fill=tk.X, padx=16, pady=10)
+
+        # Mode Radio
         mode_var = tk.StringVar(value="disable")
-        rb_disable = tk.Radiobutton(action_row, text="Safe Disable (Recommended)", variable=mode_var, value="disable",
-                                    font=("Segoe UI", 8), bg=BG_CARD, fg=TEXT_PRIMARY, selectcolor=BG_CARD_LIGHT, activebackground=BG_CARD)
-        rb_disable.pack(side=tk.LEFT, padx=(0, 10))
+        rb1 = tk.Radiobutton(action_box, text="Safe Disable (Recommended)", variable=mode_var, value="disable",
+                             font=(FONT_FAMILY, 8), fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD_LIGHT,
+                             selectcolor=COLOR_CARD, activebackground=COLOR_CARD_LIGHT)
+        rb1.pack(side=tk.LEFT, padx=(0, 10))
 
-        rb_uninstall = tk.Radiobutton(action_row, text="Full User Uninstall", variable=mode_var, value="uninstall",
-                                      font=("Segoe UI", 8), bg=BG_CARD, fg=TEXT_PRIMARY, selectcolor=BG_CARD_LIGHT, activebackground=BG_CARD)
-        rb_uninstall.pack(side=tk.LEFT, padx=(0, 12))
+        rb2 = tk.Radiobutton(action_box, text="Full User Uninstall", variable=mode_var, value="uninstall",
+                             font=(FONT_FAMILY, 8), fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD_LIGHT,
+                             selectcolor=COLOR_CARD, activebackground=COLOR_CARD_LIGHT)
+        rb2.pack(side=tk.LEFT, padx=(0, 14))
 
-        # 0.5x animation speed tweak checkbox for performance presets
-        tweak_var = tk.BooleanVar(value="perf" in preset["id"] or "performance" in preset["id"])
-        cb_tweak = tk.Checkbutton(action_row, text="⚡ 0.5x Animation Tweak", variable=tweak_var,
-                                  font=("Segoe UI", 8, "bold"), bg=BG_CARD, fg=ACCENT_YELLOW,
-                                  selectcolor=BG_CARD_LIGHT, activebackground=BG_CARD)
+        # 0.5x speed checkbox
+        tweak_var = tk.BooleanVar(value=True)
+        cb_tweak = tk.Checkbutton(action_box, text="⚡ Apply 0.5x UI Speed Tweak", variable=tweak_var,
+                                  font=(FONT_FAMILY, 8, "bold"), fg=COLOR_ACCENT_AMBER, bg=COLOR_CARD_LIGHT,
+                                  selectcolor=COLOR_CARD, activebackground=COLOR_CARD_LIGHT)
         cb_tweak.pack(side=tk.LEFT)
 
-        btn_run = tk.Button(action_row, text="Apply Preset ➔", font=("Segoe UI", 9, "bold"),
-                            bg=ACCENT_BLUE, fg="#ffffff", activebackground=ACCENT_BLUE_HOVER,
-                            activeforeground="#ffffff", relief=tk.FLAT, bd=0, padx=14, pady=5,
-                            command=lambda p=preset, m=mode_var, t=tweak_var: self._execute_preset_action(p, m.get(), t.get()))
+        # Big Action Button
+        btn_run = ModernButton(action_box, text="Apply Turbo Preset ➔", font=(FONT_FAMILY, 9, "bold"),
+                               bg=COLOR_ACCENT_BLUE, hover_bg=COLOR_ACCENT_BLUE_H, padx=16, pady=6,
+                               command=lambda: self._execute_preset(preset, mode_var.get(), tweak_var.get()))
         btn_run.pack(side=tk.RIGHT)
 
-    def _execute_preset_action(self, preset: Dict[str, Any], mode: str, apply_tweak: bool = False):
-        if not self.active_serial:
-            messagebox.showwarning("Device Not Connected", "Please connect your Samsung Tab S9 FE with USB Debugging enabled first.")
-            return
+    def _render_standard_preset_card(self, parent, preset):
+        card = tk.Frame(parent, bg=COLOR_CARD, highlightbackground=COLOR_CARD_BORDER, highlightthickness=1)
+        card.pack(fill=tk.X, pady=5, padx=2)
 
-        pkgs = preset["packages"]
-        action_text = "Safe Disable" if mode == "disable" else "Full User 0 Uninstall"
-        tweak_note = "\n⚡ Will also apply 0.5x Animation Speed Tweak." if apply_tweak else ""
-        if not messagebox.askyesno("Confirm Debloat Preset", 
-                                   f"Apply preset '{preset['name']}'?\n\nOperation: {action_text}\nTarget packages: {len(pkgs)}{tweak_note}\n\nA safety backup snapshot will be saved automatically."):
-            return
+        header = tk.Frame(card, bg=COLOR_CARD)
+        header.pack(fill=tk.X, padx=14, pady=(10, 4))
 
-        def worker():
-            if apply_tweak and self.active_serial:
-                self.adb.set_animation_scale(0.5, self.active_serial)
-                self.log("⚡ Applied 0.5x Window & Transition Animation Scale tweak.")
-            self._perform_debloat_packages(pkgs, mode)
+        t_lbl = tk.Label(header, text=preset["name"], font=(FONT_FAMILY, 10, "bold"), fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD)
+        t_lbl.pack(side=tk.LEFT)
 
-        threading.Thread(target=worker, daemon=True).start()
+        cnt_lbl = tk.Label(header, text=f"{len(preset['packages'])} packages", font=(FONT_FAMILY, 8),
+                           fg=COLOR_TEXT_MUTED, bg=COLOR_CARD_LIGHT, padx=6, pady=2)
+        cnt_lbl.pack(side=tk.RIGHT)
 
-    # ==========================================
-    # Tab 2: Custom Package Manager
-    # ==========================================
-    def _populate_packages_tab(self):
-        # Control Filter Bar
-        control_frame = tk.Frame(self.tab_packages, bg=BG_CARD, highlightbackground=BORDER_COLOR, highlightthickness=1)
-        control_frame.pack(fill=tk.X, padx=12, pady=(10, 6))
+        desc = tk.Label(card, text=preset["description"], font=(FONT_FAMILY, 8), fg=COLOR_TEXT_SECONDARY,
+                        bg=COLOR_CARD, wraplength=720, justify=tk.LEFT)
+        desc.pack(anchor="w", padx=14, pady=(0, 10))
 
-        # Category Filter
-        lbl_cat = tk.Label(control_frame, text="Category:", font=("Segoe UI", 9, "bold"), fg=TEXT_PRIMARY, bg=BG_CARD)
-        lbl_cat.pack(side=tk.LEFT, padx=(12, 6), pady=8)
+        bottom_row = tk.Frame(card, bg=COLOR_CARD)
+        bottom_row.pack(fill=tk.X, padx=14, pady=(0, 10))
+
+        mode_var = tk.StringVar(value="disable")
+        rb = tk.Radiobutton(bottom_row, text="Safe Disable", variable=mode_var, value="disable",
+                            font=(FONT_FAMILY, 8), fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD,
+                            selectcolor=COLOR_CARD_LIGHT, activebackground=COLOR_CARD)
+        rb.pack(side=tk.LEFT, padx=(0, 8))
+
+        btn = ModernButton(bottom_row, text="Apply Preset ➔", font=(FONT_FAMILY, 8, "bold"),
+                           bg=COLOR_CARD_LIGHT, hover_bg=COLOR_CARD_HOVER, bd_color=COLOR_CARD_BORDER,
+                           fg=COLOR_TEXT_PRIMARY, padx=12, pady=4,
+                           command=lambda p=preset, m=mode_var: self._execute_preset(p, m.get(), False))
+        btn.pack(side=tk.RIGHT)
+
+    # =========================================================================
+    # Page 2: Package Manager
+    # =========================================================================
+    def _render_packages_page(self):
+        self.page_title_lbl.configure(text="Custom Package Manager")
+
+        # Top Filter & Search Bar
+        top_filter_box = tk.Frame(self.content_frame, bg=COLOR_CARD, highlightbackground=COLOR_CARD_BORDER, highlightthickness=1)
+        top_filter_box.pack(fill=tk.X, pady=(0, 8))
+
+        # Category Dropdown
+        cat_lbl = tk.Label(top_filter_box, text="Category:", font=(FONT_FAMILY, 9, "bold"), fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD)
+        cat_lbl.pack(side=tk.LEFT, padx=(12, 6), pady=10)
 
         self.cat_var = tk.StringVar(value="All Categories")
         cat_options = ["All Categories"] + list(database.CATEGORIES.values())
-        self.cat_combo = ttk.Combobox(control_frame, textvariable=self.cat_var, values=cat_options, state="readonly", width=32)
-        self.cat_combo.pack(side=tk.LEFT, padx=(0, 16), pady=8)
+        self.cat_combo = ttk.Combobox(top_filter_box, textvariable=self.cat_var, values=cat_options, state="readonly", width=28)
+        self.cat_combo.pack(side=tk.LEFT, padx=(0, 14), pady=10)
         self.cat_combo.bind("<<ComboboxSelected>>", lambda e: self._filter_packages())
 
-        # Search box
-        lbl_search = tk.Label(control_frame, text="Search:", font=("Segoe UI", 9, "bold"), fg=TEXT_PRIMARY, bg=BG_CARD)
-        lbl_search.pack(side=tk.LEFT, padx=(0, 6), pady=8)
+        # Search Box
+        search_lbl = tk.Label(top_filter_box, text="Search:", font=(FONT_FAMILY, 9, "bold"), fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD)
+        search_lbl.pack(side=tk.LEFT, padx=(0, 6), pady=10)
 
         self.search_var = tk.StringVar()
         self.search_var.trace_add("write", lambda *args: self._filter_packages())
-        search_entry = tk.Entry(control_frame, textvariable=self.search_var, bg=BG_CARD_LIGHT, fg=TEXT_PRIMARY,
-                                insertbackground=TEXT_PRIMARY, bd=0, relief=tk.FLAT, font=("Segoe UI", 9), width=22)
-        search_entry.pack(side=tk.LEFT, padx=(0, 12), pady=8, ipady=3)
+        search_entry = tk.Entry(top_filter_box, textvariable=self.search_var, bg=COLOR_CARD_LIGHT, fg=COLOR_TEXT_PRIMARY,
+                                insertbackground=COLOR_TEXT_PRIMARY, bd=0, relief=tk.FLAT, font=(FONT_FAMILY, 9), width=20)
+        search_entry.pack(side=tk.LEFT, padx=(0, 14), pady=10, ipady=4)
 
-        # Quick Select Buttons
-        btn_select_safe = tk.Button(control_frame, text="Select All Safe", font=("Segoe UI", 8), bg=BG_CARD_LIGHT,
-                                    fg=ACCENT_GREEN, relief=tk.FLAT, bd=0, padx=8, pady=3,
-                                    command=lambda: self._set_selection_by_filter(safe_only=True))
-        btn_select_safe.pack(side=tk.RIGHT, padx=6)
+        # Quick Select Action Buttons
+        btn_sel_safe = ModernButton(top_filter_box, text="Select Safe", font=(FONT_FAMILY, 8, "bold"),
+                                    bg=COLOR_CARD_LIGHT, hover_bg=COLOR_CARD_HOVER, fg=COLOR_ACCENT_EMERALD,
+                                    padx=10, pady=4, command=self._select_safe_packages)
+        btn_sel_safe.pack(side=tk.RIGHT, padx=8)
 
-        btn_clear_sel = tk.Button(control_frame, text="Deselect All", font=("Segoe UI", 8), bg=BG_CARD_LIGHT,
-                                  fg=TEXT_SECONDARY, relief=tk.FLAT, bd=0, padx=8, pady=3,
-                                  command=lambda: self._set_selection_all(False))
-        btn_clear_sel.pack(side=tk.RIGHT, padx=6)
+        btn_clear = ModernButton(top_filter_box, text="Deselect All", font=(FONT_FAMILY, 8),
+                                 bg=COLOR_CARD_LIGHT, hover_bg=COLOR_CARD_HOVER, fg=COLOR_TEXT_MUTED,
+                                 padx=10, pady=4, command=self._clear_all_selection)
+        btn_clear.pack(side=tk.RIGHT, padx=4)
 
-        # Treeview / Table
-        table_frame = tk.Frame(self.tab_packages, bg=BG_DARK)
-        table_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=4)
+        # Treeview Table
+        table_container = tk.Frame(self.content_frame, bg=COLOR_CARD, highlightbackground=COLOR_CARD_BORDER, highlightthickness=1)
+        table_container.pack(fill=tk.BOTH, expand=True)
 
-        columns = ("select", "name", "id", "risk", "status", "category")
-        self.pkg_tree = ttk.Treeview(table_frame, columns=columns, show="headings", selectmode="extended")
-        
+        columns = ("select", "name", "id", "risk", "status")
+        self.pkg_tree = ttk.Treeview(table_container, columns=columns, show="headings",
+                                     selectmode="extended", style="Custom.Treeview")
+
         self.pkg_tree.heading("select", text="✓", anchor=tk.CENTER)
         self.pkg_tree.heading("name", text="Application Name", anchor=tk.W)
         self.pkg_tree.heading("id", text="Package ID", anchor=tk.W)
-        self.pkg_tree.heading("risk", text="Risk Level", anchor=tk.CENTER)
-        self.pkg_tree.heading("status", text="Current State", anchor=tk.CENTER)
-        self.pkg_tree.heading("category", text="Category", anchor=tk.W)
+        self.pkg_tree.heading("risk", text="Risk Rating", anchor=tk.CENTER)
+        self.pkg_tree.heading("status", text="Device State", anchor=tk.CENTER)
 
-        self.pkg_tree.column("select", width=40, anchor=tk.CENTER, stretch=False)
-        self.pkg_tree.column("name", width=220, anchor=tk.W)
-        self.pkg_tree.column("id", width=280, anchor=tk.W)
-        self.pkg_tree.column("risk", width=90, anchor=tk.CENTER, stretch=False)
-        self.pkg_tree.column("status", width=110, anchor=tk.CENTER, stretch=False)
-        self.pkg_tree.column("category", width=180, anchor=tk.W)
+        self.pkg_tree.column("select", width=42, anchor=tk.CENTER, stretch=False)
+        self.pkg_tree.column("name", width=240, anchor=tk.W)
+        self.pkg_tree.column("id", width=330, anchor=tk.W)
+        self.pkg_tree.column("risk", width=110, anchor=tk.CENTER, stretch=False)
+        self.pkg_tree.column("status", width=120, anchor=tk.CENTER, stretch=False)
 
-        tree_scroll = ttk.Scrollbar(table_frame, orient="vertical", command=self.pkg_tree.yview)
+        tree_scroll = ttk.Scrollbar(table_container, orient="vertical", command=self.pkg_tree.yview, style="Vertical.TScrollbar")
         self.pkg_tree.configure(yscrollcommand=tree_scroll.set)
 
         self.pkg_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -461,243 +510,166 @@ class DebloaterGUI(tk.Tk):
 
         self.pkg_tree.bind("<Button-1>", self._on_tree_click)
 
-        # Bottom Action Bar
-        bottom_bar = tk.Frame(self.tab_packages, bg=BG_CARD, highlightbackground=BORDER_COLOR, highlightthickness=1)
-        bottom_bar.pack(fill=tk.X, padx=12, pady=(6, 10))
+        # Bottom Action Dock
+        dock = tk.Frame(self.content_frame, bg=COLOR_CARD, highlightbackground=COLOR_CARD_BORDER, highlightthickness=1)
+        dock.pack(fill=tk.X, pady=(8, 0))
 
-        self.lbl_selected_count = tk.Label(bottom_bar, text="Selected: 0 packages", font=("Segoe UI", 9), fg=TEXT_SECONDARY, bg=BG_CARD)
-        self.lbl_selected_count.pack(side=tk.LEFT, padx=12, pady=8)
+        self.lbl_selected_stats = tk.Label(dock, text="Selected: 0 packages", font=(FONT_FAMILY, 9, "bold"),
+                                           fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD)
+        self.lbl_selected_stats.pack(side=tk.LEFT, padx=14, pady=10)
 
-        # Operation Mode
-        self.action_mode_var = tk.StringVar(value="disable")
-        m_dis = tk.Radiobutton(bottom_bar, text="Safe Disable", variable=self.action_mode_var, value="disable",
-                               font=("Segoe UI", 9), bg=BG_CARD, fg=TEXT_PRIMARY, selectcolor=BG_CARD_LIGHT, activebackground=BG_CARD)
-        m_dis.pack(side=tk.LEFT, padx=(16, 8))
+        # Mode Selection
+        self.custom_mode_var = tk.StringVar(value="disable")
+        m1 = tk.Radiobutton(dock, text="Safe Disable", variable=self.custom_mode_var, value="disable",
+                            font=(FONT_FAMILY, 8), fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD,
+                            selectcolor=COLOR_CARD_LIGHT, activebackground=COLOR_CARD)
+        m1.pack(side=tk.LEFT, padx=(16, 8))
 
-        m_uni = tk.Radiobutton(bottom_bar, text="User 0 Uninstall", variable=self.action_mode_var, value="uninstall",
-                               font=("Segoe UI", 9), bg=BG_CARD, fg=TEXT_PRIMARY, selectcolor=BG_CARD_LIGHT, activebackground=BG_CARD)
-        m_uni.pack(side=tk.LEFT)
+        m2 = tk.Radiobutton(dock, text="User 0 Uninstall", variable=self.custom_mode_var, value="uninstall",
+                            font=(FONT_FAMILY, 8), fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD,
+                            selectcolor=COLOR_CARD_LIGHT, activebackground=COLOR_CARD)
+        m2.pack(side=tk.LEFT)
 
-        # Big Action Button
-        self.btn_execute_debloat = tk.Button(bottom_bar, text="Debloat Selected Packages", font=("Segoe UI", 10, "bold"),
-                                             bg=ACCENT_RED, fg="#ffffff", activebackground="#c53030",
-                                             activeforeground="#ffffff", relief=tk.FLAT, bd=0, padx=18, pady=6,
-                                             command=self._execute_selected_debloat)
-        self.btn_execute_debloat.pack(side=tk.RIGHT, padx=12, pady=6)
+        btn_execute = ModernButton(dock, text="Debloat Selected Packages ➔", font=(FONT_FAMILY, 9, "bold"),
+                                   bg=COLOR_ACCENT_ROSE, hover_bg="#dc2626", padx=16, pady=6,
+                                   command=self._execute_custom_debloat)
+        btn_execute.pack(side=tk.RIGHT, padx=12, pady=6)
 
-    def _refresh_package_list_view(self):
-        # Initialize selection vars
-        for p in database.PACKAGES:
-            pkg_id = p["id"]
-            if pkg_id not in self.package_vars:
-                self.package_vars[pkg_id] = tk.BooleanVar(value=False)
+        # Refresh table rows
         self._filter_packages()
 
     def _filter_packages(self):
-        search_query = self.search_var.get().strip().lower()
+        if not hasattr(self, "pkg_tree") or not self.pkg_tree.winfo_exists():
+            return
+
         cat_filter = self.cat_var.get()
-        
-        # Clear existing rows
+        search_term = self.search_var.get().strip().lower()
+
         for item in self.pkg_tree.get_children():
             self.pkg_tree.delete(item)
 
-        cat_lookup = {v: k for k, v in database.CATEGORIES.items()}
-
-        selected_count = 0
+        sel_count = 0
         for p in database.PACKAGES:
-            pkg_id = p["id"]
+            pid = p["id"]
             name = p["name"]
-            cat_key = p["category"]
-            cat_display = database.CATEGORIES.get(cat_key, cat_key)
-            risk = p["risk"]
+            cat_display = database.CATEGORIES.get(p["category"], p["category"])
+            risk = p["risk"].upper()
 
-            # Category filter
             if cat_filter != "All Categories" and cat_display != cat_filter:
                 continue
 
-            # Search filter
-            if search_query and search_query not in pkg_id.lower() and search_query not in name.lower():
+            if search_term and search_term not in pid.lower() and search_term not in name.lower():
                 continue
 
-            # Status check
-            is_installed = pkg_id in self.installed_packages
-            status_text = "Installed" if is_installed else "Inactive / Removed"
-
-            is_checked = self.package_vars.get(pkg_id, tk.BooleanVar()).get()
-            check_mark = "☑" if is_checked else "☐"
+            is_checked = self.package_vars.get(pid, tk.BooleanVar()).get()
+            mark = "☑" if is_checked else "☐"
             if is_checked:
-                selected_count += 1
+                sel_count += 1
 
-            self.pkg_tree.insert("", tk.END, iid=pkg_id, values=(
-                check_mark, name, pkg_id, risk.upper(), status_text, cat_display
-            ))
+            status = "Installed" if pid in self.installed_packages else "Inactive"
+            self.pkg_tree.insert("", tk.END, iid=pid, values=(mark, name, pid, risk, status))
 
-        self.lbl_selected_count.configure(text=f"Selected: {selected_count} packages")
+        if hasattr(self, "lbl_selected_stats"):
+            self.lbl_selected_stats.configure(text=f"Selected: {sel_count} packages")
 
     def _on_tree_click(self, event):
         region = self.pkg_tree.identify("region", event.x, event.y)
         if region != "cell":
             return
-        column = self.pkg_tree.identify_column(event.x)
         row_id = self.pkg_tree.identify_row(event.y)
         if not row_id:
             return
 
-        # Check if row is critical danger (S Pen / Notes / Keyboard)
         pkg_map = database.get_package_map()
-        pkg_info = pkg_map.get(row_id, {})
-        if pkg_info.get("risk") == "danger":
-            if not messagebox.askyesno("Critical Component Warning", 
-                                       f"WARNING: '{pkg_info['name']}' is a critical S Pen / Tablet component!\nRemoving it may cause stylus or system issues.\n\nDo you still want to select it?"):
+        p_info = pkg_map.get(row_id, {})
+        if p_info.get("risk") == "danger":
+            if not messagebox.askyesno("Critical Stylus Component Warning",
+                                       f"WARNING: '{p_info['name']}' is vital for S Pen or Samsung DeX functionality.\n\nAre you sure you want to select this?"):
                 return
 
-        # Toggle checkmark
-        var = self.package_vars.get(row_id)
-        if var:
-            var.set(not var.get())
-            current_vals = list(self.pkg_tree.item(row_id, "values"))
-            current_vals[0] = "☑" if var.get() else "☐"
-            self.pkg_tree.item(row_id, values=current_vals)
+        var = self.package_vars.setdefault(row_id, tk.BooleanVar(value=False))
+        var.set(not var.get())
 
-        # Update count
-        count = sum(1 for v in self.package_vars.values() if v.get())
-        self.lbl_selected_count.configure(text=f"Selected: {count} packages")
+        vals = list(self.pkg_tree.item(row_id, "values"))
+        vals[0] = "☑" if var.get() else "☐"
+        self.pkg_tree.item(row_id, values=vals)
 
-    def _set_selection_all(self, state: bool):
+        sel_count = sum(1 for v in self.package_vars.values() if v.get())
+        self.lbl_selected_stats.configure(text=f"Selected: {sel_count} packages")
+
+    def _select_safe_packages(self):
         for p in database.PACKAGES:
-            # Don't auto-select danger packages
-            if state and p["risk"] == "danger":
-                continue
-            if p["id"] in self.package_vars:
-                self.package_vars[p["id"]].set(state)
+            pid = p["id"]
+            var = self.package_vars.setdefault(pid, tk.BooleanVar())
+            if p["risk"] == "safe" and pid in self.installed_packages:
+                var.set(True)
+            else:
+                var.set(False)
         self._filter_packages()
 
-    def _set_selection_by_filter(self, safe_only: bool = True):
-        for p in database.PACKAGES:
-            if safe_only and p["risk"] != "safe":
-                if p["id"] in self.package_vars:
-                    self.package_vars[p["id"]].set(False)
-            else:
-                if p["id"] in self.package_vars:
-                    # Only select if currently installed on device
-                    if p["id"] in self.installed_packages:
-                        self.package_vars[p["id"]].set(True)
-                    else:
-                        self.package_vars[p["id"]].set(False)
+    def _clear_all_selection(self):
+        for var in self.package_vars.values():
+            var.set(False)
         self._filter_packages()
 
-    def _execute_selected_debloat(self):
-        if not self.active_serial:
-            messagebox.showwarning("Device Not Connected", "Please connect your Samsung tablet with USB Debugging enabled first.")
-            return
+    # =========================================================================
+    # Page 3: Restore Center
+    # =========================================================================
+    def _render_restore_page(self):
+        self.page_title_lbl.configure(text="Restore Center")
 
-        selected_ids = [pid for pid, var in self.package_vars.items() if var.get()]
-        if not selected_ids:
-            messagebox.showinfo("No Packages Selected", "Please check at least one package from the list to debloat.")
-            return
+        info_box = tk.Frame(self.content_frame, bg=COLOR_CARD, highlightbackground=COLOR_CARD_BORDER, highlightthickness=1)
+        info_box.pack(fill=tk.X, pady=(0, 8))
 
-        mode = self.action_mode_var.get()
-        action_name = "Disable" if mode == "disable" else "Uninstall (User 0)"
-        
-        if not messagebox.askyesno("Confirm Debloat", 
-                                   f"Are you sure you want to {action_name} {len(selected_ids)} selected packages?\n\nA backup snapshot will be saved to your backups folder."):
-            return
+        i_title = tk.Label(info_box, text="Zero Data Loss • Instant Reversibility", font=(FONT_FAMILY, 10, "bold"),
+                           fg=COLOR_ACCENT_EMERALD, bg=COLOR_CARD)
+        i_title.pack(anchor="w", padx=14, pady=(10, 2))
 
-        def worker():
-            self._perform_debloat_packages(selected_ids, mode)
+        i_sub = tk.Label(info_box, text="All debloated packages remain stored on your system partition. You can re-enable or reinstall any package with 1 click.",
+                         font=(FONT_FAMILY, 8), fg=COLOR_TEXT_SECONDARY, bg=COLOR_CARD)
+        i_sub.pack(anchor="w", padx=14, pady=(0, 10))
 
-        threading.Thread(target=worker, daemon=True).start()
+        # Restore Table
+        t_container = tk.Frame(self.content_frame, bg=COLOR_CARD, highlightbackground=COLOR_CARD_BORDER, highlightthickness=1)
+        t_container.pack(fill=tk.BOTH, expand=True)
 
-    def _perform_debloat_packages(self, package_ids: List[str], mode: str):
-        self.log(f"Starting batch debloat of {len(package_ids)} packages (Mode: {mode})...")
-        
-        # 1. Snapshot backup
-        installed_list = self.adb.get_installed_packages(self.active_serial)
-        snap = utils.create_backup_snapshot(self.device_info, installed_list)
-        self.log(f"Safety snapshot created: {snap.name}")
+        columns = ("name", "id", "state")
+        self.restore_tree = ttk.Treeview(t_container, columns=columns, show="headings",
+                                         selectmode="extended", style="Custom.Treeview")
 
-        pkg_map = database.get_package_map()
-        success_count = 0
-
-        for i, pkg in enumerate(package_ids, 1):
-            name = pkg_map.get(pkg, {}).get("name", pkg)
-            self.log(f"[{i}/{len(package_ids)}] Processing: {name} ({pkg})...")
-            
-            if mode == "disable":
-                success, msg = self.adb.disable_package(pkg, self.active_serial)
-            else:
-                success, msg = self.adb.uninstall_package(pkg, keep_data=True, serial=self.active_serial)
-
-            if success:
-                success_count += 1
-                utils.log_debloat_action(pkg, mode, True, note=name)
-                self.log(f" -> SUCCESS: {pkg}")
-            else:
-                utils.log_debloat_action(pkg, mode, False, note=msg)
-                self.log(f" -> SKIPPED / FAILED: {pkg} ({msg})", "WARN")
-
-        self.log(f"Batch completed: {success_count}/{len(package_ids)} packages processed successfully.", "SUCCESS")
-        
-        # Refresh state
-        self.installed_packages = set(self.adb.get_installed_packages(self.active_serial))
-        self.after(0, self._filter_packages)
-        self.after(0, self._refresh_restore_list_view)
-        
-        messagebox.showinfo("Debloat Complete", 
-                            f"Successfully processed {success_count} of {len(package_ids)} packages!\n\nRebooting your tablet is recommended to stop residual background daemons.")
-
-    # ==========================================
-    # Tab 3: Restore Center
-    # ==========================================
-    def _populate_restore_tab(self):
-        top_box = tk.Frame(self.tab_restore, bg=BG_CARD, highlightbackground=BORDER_COLOR, highlightthickness=1)
-        top_box.pack(fill=tk.X, padx=12, pady=(10, 6))
-
-        r_info = tk.Label(top_box, text="Restore any uninstalled or disabled system packages with 1 click without root or data loss.",
-                          font=("Segoe UI", 9), fg=TEXT_SECONDARY, bg=BG_CARD)
-        r_info.pack(side=tk.LEFT, padx=12, pady=10)
-
-        btn_refresh_restore = tk.Button(top_box, text="↻ Scan Device", font=("Segoe UI", 8), bg=BG_CARD_LIGHT,
-                                        fg=TEXT_PRIMARY, relief=tk.FLAT, bd=0, padx=10, pady=4,
-                                        command=self._refresh_restore_list_view)
-        btn_refresh_restore.pack(side=tk.RIGHT, padx=12, pady=10)
-
-        # Restore Treeview
-        r_table_frame = tk.Frame(self.tab_restore, bg=BG_DARK)
-        r_table_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=4)
-
-        columns = ("name", "id", "status")
-        self.restore_tree = ttk.Treeview(r_table_frame, columns=columns, show="headings", selectmode="extended")
         self.restore_tree.heading("name", text="Application Name", anchor=tk.W)
         self.restore_tree.heading("id", text="Package ID", anchor=tk.W)
-        self.restore_tree.heading("status", text="Restore Status", anchor=tk.CENTER)
+        self.restore_tree.heading("state", text="Restore Status", anchor=tk.CENTER)
 
-        self.restore_tree.column("name", width=300, anchor=tk.W)
-        self.restore_tree.column("id", width=380, anchor=tk.W)
-        self.restore_tree.column("status", width=180, anchor=tk.CENTER)
+        self.restore_tree.column("name", width=280, anchor=tk.W)
+        self.restore_tree.column("id", width=360, anchor=tk.W)
+        self.restore_tree.column("state", width=140, anchor=tk.CENTER)
 
-        r_scroll = ttk.Scrollbar(r_table_frame, orient="vertical", command=self.restore_tree.yview)
+        r_scroll = ttk.Scrollbar(t_container, orient="vertical", command=self.restore_tree.yview, style="Vertical.TScrollbar")
         self.restore_tree.configure(yscrollcommand=r_scroll.set)
 
         self.restore_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         r_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # Restore Action Bar
-        r_bottom = tk.Frame(self.tab_restore, bg=BG_CARD, highlightbackground=BORDER_COLOR, highlightthickness=1)
-        r_bottom.pack(fill=tk.X, padx=12, pady=(6, 10))
+        # Restore Dock
+        dock = tk.Frame(self.content_frame, bg=COLOR_CARD, highlightbackground=COLOR_CARD_BORDER, highlightthickness=1)
+        dock.pack(fill=tk.X, pady=(8, 0))
 
-        btn_restore_selected = tk.Button(r_bottom, text="Restore Selected", font=("Segoe UI", 9, "bold"),
-                                         bg=ACCENT_GREEN, fg="#ffffff", activebackground="#2f855a",
-                                         activeforeground="#ffffff", relief=tk.FLAT, bd=0, padx=16, pady=6,
-                                         command=self._restore_selected_packages)
-        btn_restore_selected.pack(side=tk.RIGHT, padx=12, pady=6)
+        btn_res_all = ModernButton(dock, text="Restore ALL Listed Packages", font=(FONT_FAMILY, 9, "bold"),
+                                   bg=COLOR_CARD_LIGHT, hover_bg=COLOR_CARD_HOVER, bd_color=COLOR_CARD_BORDER,
+                                   fg=COLOR_TEXT_PRIMARY, padx=16, pady=6, command=self._restore_all_action)
+        btn_res_all.pack(side=tk.LEFT, padx=12, pady=6)
 
-        btn_restore_all = tk.Button(r_bottom, text="Restore ALL Listed", font=("Segoe UI", 9),
-                                    bg=BG_CARD_LIGHT, fg=TEXT_PRIMARY, relief=tk.FLAT, bd=0, padx=14, pady=6,
-                                    command=self._restore_all_packages)
-        btn_restore_all.pack(side=tk.RIGHT, padx=6, pady=6)
+        btn_res_sel = ModernButton(dock, text="Restore Selected ➔", font=(FONT_FAMILY, 9, "bold"),
+                                   bg=COLOR_ACCENT_EMERALD, hover_bg="#059669", padx=16, pady=6,
+                                   command=self._restore_selected_action)
+        btn_res_sel.pack(side=tk.RIGHT, padx=12, pady=6)
 
-    def _refresh_restore_list_view(self):
+        self._refresh_restore_table()
+
+    def _refresh_restore_table(self):
+        if not hasattr(self, "restore_tree") or not self.restore_tree.winfo_exists():
+            return
         for item in self.restore_tree.get_children():
             self.restore_tree.delete(item)
 
@@ -707,133 +679,389 @@ class DebloaterGUI(tk.Tk):
         candidates = self.adb.get_uninstalled_or_disabled_packages(self.active_serial)
         history = utils.load_debloat_history()
         merged = sorted(list(set(candidates + list(history.keys()))))
-
         pkg_map = database.get_package_map()
 
-        for p in merged:
-            name = pkg_map.get(p, {}).get("name", "System Package")
-            status_desc = "Uninstalled / Disabled"
-            if p in history:
-                status_desc = f"Debloated ({history[p].get('mode', 'removed')})"
-            
-            self.restore_tree.insert("", tk.END, iid=p, values=(name, p, status_desc))
+        for pid in merged:
+            name = pkg_map.get(pid, {}).get("name", "System Service")
+            state = "Disabled / Uninstalled"
+            if pid in history:
+                state = f"Debloated ({history[pid].get('mode', 'user 0')})"
+            self.restore_tree.insert("", tk.END, iid=pid, values=(name, pid, state))
 
-    def _restore_selected_packages(self):
-        selected = self.restore_tree.selection()
-        if not selected:
-            messagebox.showinfo("No Selection", "Please select one or more packages from the list to restore.")
+    # =========================================================================
+    # Page 4: Hardware Tweaks
+    # =========================================================================
+    def _render_tweaks_page(self):
+        self.page_title_lbl.configure(text="Hardware & One UI Tweaks")
+
+        # Tweak Card 1: Exynos 1380 Animation Speed
+        c1 = tk.Frame(self.content_frame, bg=COLOR_CARD, highlightbackground=COLOR_CARD_BORDER, highlightthickness=1)
+        c1.pack(fill=tk.X, pady=(0, 10))
+
+        t1 = tk.Label(c1, text="⚡ Exynos 1380 Animation Speed Accelerator", font=(FONT_FAMILY, 11, "bold"),
+                      fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD)
+        t1.pack(anchor="w", padx=16, pady=(12, 4))
+
+        d1 = tk.Label(c1, text="One UI app launch animations are rendered at 1.0x by default. On the Exynos 1380 processor, this often feels sluggish.\nSetting animation scales to 0.5x makes the tablet feel instantaneous while maintaining smooth 90Hz scrolling.",
+                      font=(FONT_FAMILY, 8), fg=COLOR_TEXT_SECONDARY, bg=COLOR_CARD, justify=tk.LEFT)
+        d1.pack(anchor="w", padx=16, pady=(0, 12))
+
+        b_row = tk.Frame(c1, bg=COLOR_CARD)
+        b_row.pack(anchor="w", padx=16, pady=(0, 14))
+
+        b1 = ModernButton(b_row, text="⚡ Set 0.5x Speed (Recommended)", font=(FONT_FAMILY, 8, "bold"),
+                          bg=COLOR_ACCENT_BLUE, hover_bg=COLOR_ACCENT_BLUE_H, padx=14, pady=5,
+                          command=lambda: self._set_speed_scale(0.5))
+        b1.pack(side=tk.LEFT, padx=(0, 10))
+
+        b2 = ModernButton(b_row, text="Set 0.25x (Ultra Fast)", font=(FONT_FAMILY, 8),
+                          bg=COLOR_CARD_LIGHT, hover_bg=COLOR_CARD_HOVER, fg=COLOR_TEXT_PRIMARY, padx=14, pady=5,
+                          command=lambda: self._set_speed_scale(0.25))
+        b2.pack(side=tk.LEFT, padx=(0, 10))
+
+        b3 = ModernButton(b_row, text="Reset to 1.0x Default", font=(FONT_FAMILY, 8),
+                          bg=COLOR_CARD_LIGHT, hover_bg=COLOR_CARD_HOVER, fg=COLOR_TEXT_MUTED, padx=14, pady=5,
+                          command=lambda: self._set_speed_scale(1.0))
+        b3.pack(side=tk.LEFT)
+
+        # Tweak Card 2: Device Maintenance
+        c2 = tk.Frame(self.content_frame, bg=COLOR_CARD, highlightbackground=COLOR_CARD_BORDER, highlightthickness=1)
+        c2.pack(fill=tk.X, pady=6)
+
+        t2 = tk.Label(c2, text="🔄 Device Maintenance & Clean Reboot", font=(FONT_FAMILY, 11, "bold"),
+                      fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD)
+        t2.pack(anchor="w", padx=16, pady=(12, 4))
+
+        d2 = tk.Label(c2, text="After debloating or restoring packages, a quick reboot ensures all background memory caches are freed and residual daemons are stopped.",
+                      font=(FONT_FAMILY, 8), fg=COLOR_TEXT_SECONDARY, bg=COLOR_CARD)
+        d2.pack(anchor="w", padx=16, pady=(0, 12))
+
+        b_reboot = ModernButton(c2, text="Reboot Tablet via ADB", font=(FONT_FAMILY, 8, "bold"),
+                                bg=COLOR_CARD_LIGHT, hover_bg=COLOR_CARD_HOVER, bd_color=COLOR_CARD_BORDER,
+                                fg=COLOR_ACCENT_AMBER, padx=14, pady=5, command=self._reboot_action)
+        b_reboot.pack(anchor="w", padx=16, pady=(0, 14))
+
+    # =========================================================================
+    # Page 5: Activity & Logs
+    # =========================================================================
+    def _render_logs_page(self):
+        self.page_title_lbl.configure(text="Execution Console & Logs")
+
+        log_box = tk.Frame(self.content_frame, bg=COLOR_CARD, highlightbackground=COLOR_CARD_BORDER, highlightthickness=1)
+        log_box.pack(fill=tk.BOTH, expand=True)
+
+        tool_bar = tk.Frame(log_box, bg=COLOR_CARD_LIGHT)
+        tool_bar.pack(fill=tk.X, padx=12, pady=6)
+
+        lbl = tk.Label(tool_bar, text="REAL-TIME ADB LOGS", font=(FONT_FAMILY, 8, "bold"), fg=COLOR_TEXT_MUTED, bg=COLOR_CARD_LIGHT)
+        lbl.pack(side=tk.LEFT)
+
+        btn_clr = ModernButton(tool_bar, text="Clear Console", font=(FONT_FAMILY, 8),
+                               bg=COLOR_CARD, hover_bg=COLOR_CARD_HOVER, fg=COLOR_TEXT_MUTED, padx=8, pady=3,
+                               command=self.clear_log)
+        btn_clr.pack(side=tk.RIGHT)
+
+        self.full_log_text = tk.Text(log_box, bg="#0d0f14", fg="#34d399", font=("Consolas", 9),
+                                     bd=0, padx=12, pady=8, state=tk.NORMAL)
+        self.full_log_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
+        self.full_log_text.insert(tk.END, self.log_buffer)
+        self.full_log_text.see(tk.END)
+        self.full_log_text.configure(state=tk.DISABLED)
+
+    # =========================================================================
+    # Bottom Activity Bar & Collapsible Console
+    # =========================================================================
+    def _build_bottom_bar(self):
+        self.log_buffer = ""
+
+        self.bottom_bar = tk.Frame(self.main_container, bg=COLOR_SIDEBAR, height=36, highlightbackground=COLOR_CARD_BORDER, highlightthickness=1)
+        self.bottom_bar.pack(fill=tk.X, side=tk.BOTTOM)
+        self.bottom_bar.pack_propagate(False)
+
+        self.lbl_status_ticker = tk.Label(self.bottom_bar, text="Ready", font=(FONT_FAMILY, 8),
+                                          fg=COLOR_TEXT_MUTED, bg=COLOR_SIDEBAR)
+        self.lbl_status_ticker.pack(side=tk.LEFT, padx=16)
+
+        btn_view_logs = ModernButton(self.bottom_bar, text="Console ▾", font=(FONT_FAMILY, 7, "bold"),
+                                     bg=COLOR_SIDEBAR, hover_bg=COLOR_SIDEBAR_ACTIVE, fg=COLOR_TEXT_SECONDARY,
+                                     padx=8, pady=2, command=lambda: self.switch_page("logs"))
+        btn_view_logs.pack(side=tk.RIGHT, padx=12)
+
+    def log(self, message: str, level: str = "INFO"):
+        timestamp = time.strftime("%H:%M:%S")
+        entry = f"[{timestamp}] [{level}] {message}\n"
+        self.log_buffer += entry
+
+        if hasattr(self, "lbl_status_ticker"):
+            self.lbl_status_ticker.configure(text=f"● {message}")
+
+        if hasattr(self, "full_log_text") and self.full_log_text.winfo_exists():
+            self.full_log_text.configure(state=tk.NORMAL)
+            self.full_log_text.insert(tk.END, entry)
+            self.full_log_text.see(tk.END)
+            self.full_log_text.configure(state=tk.DISABLED)
+
+    def clear_log(self):
+        self.log_buffer = ""
+        if hasattr(self, "full_log_text") and self.full_log_text.winfo_exists():
+            self.full_log_text.configure(state=tk.NORMAL)
+            self.full_log_text.delete("1.0", tk.END)
+            self.full_log_text.configure(state=tk.DISABLED)
+
+    # =========================================================================
+    # Background Device Scanner
+    # =========================================================================
+    def async_refresh_device(self):
+        def worker():
+            self.log("Scanning ADB interfaces for connected tablet...")
+            if not self.adb.is_adb_installed():
+                self.log("Downloading Google Android platform-tools...")
+                try:
+                    self.adb.download_platform_tools()
+                    self.log("Platform-tools initialized successfully.")
+                except Exception as e:
+                    self.log(f"Platform-tools error: {e}", "ERROR")
+                    self._update_device_ui(None, "error")
+                    return
+
+            devices = self.adb.get_connected_devices()
+            if not devices:
+                self._update_device_ui(None, "none")
+                return
+
+            active = [d for d in devices if d["status"] == "device"]
+            if not active:
+                first = devices[0]
+                self._update_device_ui(first, "unauthorized")
+                return
+
+            serial = active[0]["serial"]
+            info = self.adb.get_device_info(serial)
+            installed = set(self.adb.get_installed_packages(serial))
+
+            self.device_info = info
+            self.active_serial = serial
+            self.installed_packages = installed
+
+            self._update_device_ui(info, "connected")
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _update_device_ui(self, info, state):
+        if state == "connected":
+            market = info.get("market_name", "Samsung Device")
+            model = info.get("model", "")
+            oneui = info.get("oneui_version", "?")
+            batt = info.get("battery", "")
+            batt_str = f" • Battery {batt}" if batt else ""
+            txt = f"{market} ({model}) • One UI {oneui}{batt_str}"
+            self.device_chip_dot.configure(fg=COLOR_ACCENT_EMERALD)
+            self.device_chip_text.configure(text=txt)
+            self.log(f"Device ready: {market} [{model}] running One UI {oneui}")
+        elif state == "unauthorized":
+            self.device_chip_dot.configure(fg=COLOR_ACCENT_AMBER)
+            self.device_chip_text.configure(text="Unlock Tablet & Allow USB Debugging")
+            self.log("Device unauthorized. Tap 'Always allow from this computer' on screen.", "WARN")
+        else:
+            self.device_chip_dot.configure(fg=COLOR_ACCENT_ROSE)
+            self.device_chip_text.configure(text="No Device Connected")
+            self.log("No device detected. Connect Tab S9 FE with USB Debugging enabled.", "WARN")
+
+        # Auto refresh package lists if on those pages
+        if self.current_page == "packages":
+            self.after(0, self._filter_packages)
+        elif self.current_page == "restore":
+            self.after(0, self._refresh_restore_table)
+
+    # =========================================================================
+    # Execution Logic
+    # =========================================================================
+    def _execute_preset(self, preset, mode, apply_tweak):
+        if not self.active_serial:
+            messagebox.showwarning("Device Not Connected", "Please connect your Samsung Tab S9 FE with USB Debugging enabled.")
             return
 
-        self._execute_restore(list(selected))
+        pkgs = preset["packages"]
+        action_verb = "Safe Disable" if mode == "disable" else "Full User 0 Uninstall"
+        tweak_note = "\n⚡ 0.5x UI Speed Accelerator will also be applied." if apply_tweak else ""
 
-    def _restore_all_packages(self):
-        all_items = self.restore_tree.get_children()
+        if not messagebox.askyesno("Confirm Debloat Preset",
+                                   f"Apply '{preset['name']}'?\n\nMode: {action_verb}\nTarget Packages: {len(pkgs)}{tweak_note}\n\nA backup snapshot will be recorded automatically."):
+            return
+
+        def worker():
+            if apply_tweak and self.active_serial:
+                self.adb.set_animation_scale(0.5, self.active_serial)
+                self.log("⚡ Window & Transition animation scale set to 0.5x.")
+
+            self._run_debloat_batch(pkgs, mode)
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _execute_custom_debloat(self):
+        if not self.active_serial:
+            messagebox.showwarning("Device Not Connected", "Please connect your Samsung tablet first.")
+            return
+
+        selected = [pid for pid, var in self.package_vars.items() if var.get()]
+        if not selected:
+            messagebox.showinfo("No Selection", "Please check at least one package to debloat.")
+            return
+
+        mode = self.custom_mode_var.get()
+        action_verb = "Safe Disable" if mode == "disable" else "Full User 0 Uninstall"
+
+        if not messagebox.askyesno("Confirm Debloat",
+                                   f"Ready to {action_verb} {len(selected)} selected packages?\n\nA backup snapshot will be saved to your backups folder."):
+            return
+
+        def worker():
+            self._run_debloat_batch(selected, mode)
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _run_debloat_batch(self, package_ids, mode):
+        self.log(f"Starting batch debloat of {len(package_ids)} packages ({mode} mode)...")
+
+        # Snapshot backup
+        installed_list = self.adb.get_installed_packages(self.active_serial)
+        snap = utils.create_backup_snapshot(self.device_info, installed_list)
+        self.log(f"Backup snapshot saved: {snap.name}")
+
+        pkg_map = database.get_package_map()
+        success_count = 0
+
+        for i, pid in enumerate(package_ids, 1):
+            name = pkg_map.get(pid, {}).get("name", pid)
+            self.log(f"[{i}/{len(package_ids)}] Processing: {name} ({pid})...")
+
+            if mode == "disable":
+                ok, msg = self.adb.disable_package(pid, self.active_serial)
+            else:
+                ok, msg = self.adb.uninstall_package(pid, keep_data=True, serial=self.active_serial)
+
+            if ok:
+                success_count += 1
+                utils.log_debloat_action(pid, mode, True, note=name)
+                self.log(f" -> SUCCESS: {pid}")
+            else:
+                utils.log_debloat_action(pid, mode, False, note=msg)
+                self.log(f" -> SKIPPED / NOT FOUND: {pid} ({msg})", "WARN")
+
+        self.log(f"Batch completed: {success_count}/{len(package_ids)} packages processed successfully.", "SUCCESS")
+        self.installed_packages = set(self.adb.get_installed_packages(self.active_serial))
+
+        if self.current_page == "packages":
+            self.after(0, self._filter_packages)
+        elif self.current_page == "restore":
+            self.after(0, self._refresh_restore_table)
+
+        messagebox.showinfo("Debloat Complete",
+                            f"Successfully debloated {success_count} of {len(package_ids)} packages!\n\nA quick tablet reboot is recommended to clean background memory.")
+
+    def _restore_selected_action(self):
+        if not hasattr(self, "restore_tree"):
+            return
+        selected = self.restore_tree.selection()
+        if not selected:
+            messagebox.showinfo("No Selection", "Please select one or more packages from the table to restore.")
+            return
+        self._run_restore_batch(list(selected))
+
+    def _restore_all_action(self):
+        if not hasattr(self, "restore_tree"):
+            return
+        all_items = list(self.restore_tree.get_children())
         if not all_items:
             messagebox.showinfo("Nothing to Restore", "No uninstalled packages found on the device.")
             return
+        if messagebox.askyesno("Confirm Full Restore", f"Restore all {len(all_items)} packages back to your tablet?"):
+            self._run_restore_batch(all_items)
 
-        if messagebox.askyesno("Confirm Full Restore", f"Restore all {len(all_items)} uninstalled packages back to your tablet?"):
-            self._execute_restore(list(all_items))
-
-    def _execute_restore(self, package_ids: List[str]):
+    def _run_restore_batch(self, package_ids):
         def worker():
             self.log(f"Restoring {len(package_ids)} packages...")
             restored = 0
             pkg_map = database.get_package_map()
 
-            for p in package_ids:
-                name = pkg_map.get(p, {}).get("name", p)
-                self.log(f"Reinstalling / Enabling: {name} ({p})...")
-                success, msg = self.adb.restore_package(p, self.active_serial)
-                if success:
+            for pid in package_ids:
+                name = pkg_map.get(pid, {}).get("name", pid)
+                self.log(f"Restoring {name} ({pid})...")
+                ok, msg = self.adb.restore_package(pid, self.active_serial)
+                if ok:
                     restored += 1
-                    utils.remove_from_debloat_history(p)
-                    self.log(f" -> RESTORED: {p}")
+                    utils.remove_from_debloat_history(pid)
+                    self.log(f" -> RESTORED: {pid}")
                 else:
-                    self.log(f" -> FAILED: {p} ({msg})", "WARN")
+                    self.log(f" -> FAILED: {pid} ({msg})", "WARN")
 
-            self.log(f"Restoration complete: {restored}/{len(package_ids)} packages active.")
+            self.log(f"Restoration finished: {restored}/{len(package_ids)} packages active.")
             self.installed_packages = set(self.adb.get_installed_packages(self.active_serial))
-            self.after(0, self._refresh_restore_list_view)
-            self.after(0, self._filter_packages)
+            self.after(0, self._refresh_restore_table)
             messagebox.showinfo("Restore Complete", f"Successfully restored {restored} package(s)!")
 
         threading.Thread(target=worker, daemon=True).start()
 
-    # ==========================================
-    # Tab 4: Performance Tweaks & Hardware
-    # ==========================================
-    def _populate_tweaks_tab(self):
-        t_card1 = tk.Frame(self.tab_tweaks, bg=BG_CARD, highlightbackground=BORDER_COLOR, highlightthickness=1)
-        t_card1.pack(fill=tk.X, padx=14, pady=10)
-
-        t1_title = tk.Label(t_card1, text="⚡ Exynos 1380 UI Animation Accelerator", font=("Segoe UI", 11, "bold"), fg=TEXT_PRIMARY, bg=BG_CARD)
-        t1_title.pack(anchor="w", padx=14, pady=(12, 4))
-
-        t1_desc = tk.Label(t_card1, text="Samsung's One UI animations can feel slightly heavy on the Exynos 1380 chipset.\nAdjusting the window animation scales to 0.5x makes the tablet feel instantaneous while maintaining smooth 90Hz scrolling.",
-                           font=("Segoe UI", 9), fg=TEXT_SECONDARY, bg=BG_CARD, justify=tk.LEFT)
-        t1_desc.pack(anchor="w", padx=14, pady=(0, 10))
-
-        btn_row = tk.Frame(t_card1, bg=BG_CARD)
-        btn_row.pack(anchor="w", padx=14, pady=(0, 14))
-
-        btn_05 = tk.Button(btn_row, text="Set 0.5x (Recommended)", font=("Segoe UI", 9, "bold"),
-                           bg=ACCENT_BLUE, fg="#ffffff", relief=tk.FLAT, bd=0, padx=14, pady=6,
-                           command=lambda: self._apply_animation_scale(0.5))
-        btn_05.pack(side=tk.LEFT, padx=(0, 10))
-
-        btn_025 = tk.Button(btn_row, text="Set 0.25x (Ultra Fast)", font=("Segoe UI", 9),
-                            bg=BG_CARD_LIGHT, fg=TEXT_PRIMARY, relief=tk.FLAT, bd=0, padx=14, pady=6,
-                            command=lambda: self._apply_animation_scale(0.25))
-        btn_025.pack(side=tk.LEFT, padx=(0, 10))
-
-        btn_reset = tk.Button(btn_row, text="Reset to 1.0x (Default)", font=("Segoe UI", 9),
-                              bg=BG_CARD_LIGHT, fg=TEXT_MUTED, relief=tk.FLAT, bd=0, padx=14, pady=6,
-                              command=lambda: self._apply_animation_scale(1.0))
-        btn_reset.pack(side=tk.LEFT)
-
-        # Device Management Card
-        t_card2 = tk.Frame(self.tab_tweaks, bg=BG_CARD, highlightbackground=BORDER_COLOR, highlightthickness=1)
-        t_card2.pack(fill=tk.X, padx=14, pady=6)
-
-        t2_title = tk.Label(t_card2, text="🔄 Device Maintenance", font=("Segoe UI", 11, "bold"), fg=TEXT_PRIMARY, bg=BG_CARD)
-        t2_title.pack(anchor="w", padx=14, pady=(12, 4))
-
-        t2_desc = tk.Label(t_card2, text="After debloating or restoring packages, a quick reboot ensures all system caches and services are clean.",
-                           font=("Segoe UI", 9), fg=TEXT_SECONDARY, bg=BG_CARD)
-        t2_desc.pack(anchor="w", padx=14, pady=(0, 10))
-
-        btn_reboot = tk.Button(t_card2, text="Reboot Tablet via ADB", font=("Segoe UI", 9, "bold"),
-                               bg=ACCENT_YELLOW, fg="#000000", relief=tk.FLAT, bd=0, padx=14, pady=6,
-                               command=self._reboot_tablet)
-        btn_reboot.pack(anchor="w", padx=14, pady=(0, 14))
-
-    def _apply_animation_scale(self, scale: float):
+    def _set_speed_scale(self, scale: float):
         if not self.active_serial:
             messagebox.showwarning("Device Not Connected", "Please connect your tablet first.")
             return
-
-        success = self.adb.set_animation_scale(scale, self.active_serial)
-        if success:
+        ok = self.adb.set_animation_scale(scale, self.active_serial)
+        if ok:
             self.log(f"Window animation scale set to {scale}x successfully.")
             messagebox.showinfo("Tweak Applied", f"Animation scale successfully set to {scale}x!")
         else:
             self.log("Failed to set animation scale.", "ERROR")
             messagebox.showerror("Error", "Could not set animation scale.")
 
-    def _reboot_tablet(self):
+    def _reboot_action(self):
         if not self.active_serial:
             messagebox.showwarning("Device Not Connected", "Please connect your tablet first.")
             return
-
         if messagebox.askyesno("Confirm Reboot", "Do you want to reboot your tablet now?"):
             self.adb.reboot_device(self.active_serial)
             self.log("Reboot command sent to tablet.")
-            self._update_device_ui_disconnected()
+            self._update_device_ui(None, "none")
+
+    # =========================================================================
+    # Support Modal
+    # =========================================================================
+    def _show_support_modal(self):
+        modal = tk.Toplevel(self)
+        modal.title("Support Tab S9 FE Debloater Toolkit")
+        modal.geometry("390x290")
+        modal.configure(bg=COLOR_CARD)
+        modal.resizable(False, False)
+        modal.transient(self)
+        modal.grab_set()
+
+        lbl = tk.Label(modal, text="☕ Support & Donations", font=(FONT_FAMILY, 12, "bold"), fg=COLOR_TEXT_PRIMARY, bg=COLOR_CARD)
+        lbl.pack(pady=(18, 4))
+
+        sub = tk.Label(modal, text="If this toolkit helped make your Tab S9 FE snappier,\nconsider supporting maintenance and future updates!",
+                       font=(FONT_FAMILY, 8), fg=COLOR_TEXT_SECONDARY, bg=COLOR_CARD, justify=tk.CENTER)
+        sub.pack(pady=(0, 14))
+
+        b_bmac = ModernButton(modal, text="☕ Buy Me a Coffee", font=(FONT_FAMILY, 9, "bold"),
+                              bg="#f59e0b", hover_bg="#d97706", fg="#000000", padx=12, pady=6, width=28,
+                              command=lambda: [webbrowser.open("https://buymeacoffee.com/kavangcb29"), modal.destroy()])
+        b_bmac.pack(pady=4)
+
+        b_kofi = ModernButton(modal, text="❤️ Ko-fi Support", font=(FONT_FAMILY, 9, "bold"),
+                              bg="#e53e3e", hover_bg="#dc2626", fg="#ffffff", padx=12, pady=6, width=28,
+                              command=lambda: [webbrowser.open("https://ko-fi.com/kavangcb29"), modal.destroy()])
+        b_kofi.pack(pady=4)
+
+        b_paypal = ModernButton(modal, text="💳 PayPal (Direct: paypal.me/KavanSudev)", font=(FONT_FAMILY, 9, "bold"),
+                                bg="#0070ba", hover_bg="#005ea6", fg="#ffffff", padx=12, pady=6, width=28,
+                                command=lambda: [webbrowser.open("https://paypal.me/KavanSudev"), modal.destroy()])
+        b_paypal.pack(pady=4)
+
 
 def main():
     app = DebloaterGUI()
     app.mainloop()
+
 
 if __name__ == "__main__":
     main()
