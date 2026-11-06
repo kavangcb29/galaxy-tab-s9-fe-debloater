@@ -122,7 +122,7 @@ class TabS9FEDebloater:
         print(f"│  Battery: {self.device_info.get('battery', 'Unknown')} | Serial: {self.active_serial}")
         print(colorize("└──────────────────────────────────────────────────────────────", Colors.GREEN))
 
-    def run_debloat(self, package_ids: List[str], mode: str = "uninstall"):
+    def run_debloat(self, package_ids: List[str], mode: str = "uninstall", skip_confirm: bool = False):
         """
         Executes debloat with automatic backup snapshot creation.
         mode: 'uninstall' (pm uninstall -k --user 0) or 'disable' (pm disable-user --user 0)
@@ -160,10 +160,11 @@ class TabS9FEDebloater:
         # Step 2: Confirmation
         action_verb = "Uninstall (User 0)" if mode == "uninstall" else "Disable"
         print(colorize(f"\n[2/3] Ready to {action_verb} {len(target_pkgs)} packages.", Colors.BOLD))
-        confirm = input(f"Proceed with {action_verb}? [Y/n]: ").strip().lower()
-        if confirm and confirm != 'y':
-            print("Cancelled.")
-            return
+        if not skip_confirm:
+            confirm = input(f"Proceed with {action_verb}? [Y/n]: ").strip().lower()
+            if confirm and confirm != 'y':
+                print("Cancelled.")
+                return
 
         # Step 3: Execution
         print(colorize(f"\n[3/3] Executing {action_verb}...", Colors.CYAN))
@@ -437,6 +438,8 @@ def main():
     parser.add_argument("--preset", type=str, help="Run a specific preset (e.g. 'safe_recommended', 'exynos_performance')")
     parser.add_argument("--restore-all", action="store_true", help="Restore all previously debloated packages")
     parser.add_argument("--tweaks", action="store_true", help="Apply 0.5x animation scale tweak for Exynos 1380")
+    parser.add_argument("--mode", choices=["disable", "uninstall"], default="disable", help="Operation mode (default: disable)")
+    parser.add_argument("-y", "--yes", action="store_true", help="Skip confirmation prompt")
     args = parser.parse_args()
 
     app = TabS9FEDebloater()
@@ -451,7 +454,11 @@ def main():
         target = next((p for p in presets if p["id"] == args.preset), None)
         if target:
             print(f"Applying preset: {target['name']}")
-            app.run_debloat(target["packages"], mode="disable")
+            if "perf" in target["id"] or "performance" in target["id"] or args.tweaks:
+                if app.active_serial:
+                    app.adb.set_animation_scale(0.5, app.active_serial)
+                    print(colorize("[✓] Animation speed set to 0.5x!", Colors.GREEN))
+            app.run_debloat(target["packages"], mode=args.mode, skip_confirm=args.yes)
         else:
             print(f"Preset '{args.preset}' not found. Available: {[p['id'] for p in presets]}")
         return
