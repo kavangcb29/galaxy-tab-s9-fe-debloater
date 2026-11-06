@@ -3,7 +3,7 @@
     {
       "id": "safe_debixby_perf",
       "name": "Safe & Clean + De-Bixby + Exynos Performance Turbo",
-      "description": "The complete all-in-one setup: Safe bloatware removal + complete De-Bixby suite + Exynos 1380 unthrottling (disables GOS throttle, Gaming Hub, Wi-Fi telephony, telemetry, Meta/Facebook). S Pen, Samsung Notes & DeX remain 100% protected.",
+      "description": "Safe bloatware removal + De-Bixby suite + 0.5x UI speed boost. Preserves Gaming Hub, Game Booster, S Pen, Samsung Notes, Digital Wellbeing, Outlook & DeX.",
       "packages": [
         "com.samsung.android.rubin.app",
         "com.samsung.android.knox.analytics.uploader",
@@ -42,9 +42,6 @@
         "com.samsung.android.visionintelligence",
         "com.samsung.android.bixbyvision.framework",
         "com.samsung.android.app.spage",
-        "com.samsung.android.game.gos",
-        "com.samsung.android.game.gamehome",
-        "com.samsung.android.game.gametools",
         "com.android.calllogbackup",
         "com.hiya.star",
         "com.samsung.android.smartcallprovider"

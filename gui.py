@@ -380,7 +380,7 @@ class DebloaterGUI(tk.Tk):
         pill_row.pack(fill=tk.X, padx=16, pady=(0, 14))
 
         pills = [
-            ("⚡ Exynos 1380 GOS Unthrottled", COLOR_ACCENT_EMERALD),
+            ("🎮 Game Center & Booster Preserved", COLOR_ACCENT_EMERALD),
             ("🔇 De-Bixby Standby Battery Saver", COLOR_ACCENT_BLUE),
             ("🔒 S Pen, Notes & DeX 100% Protected", "#a855f7"),
             ("✨ Outlook & Wellbeing Preserved", COLOR_TEXT_MUTED)

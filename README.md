@@ -70,6 +70,7 @@ The following packages are explicitly marked **DANGER / CRITICAL** and protected
 * **Edge Panels** (`com.samsung.android.app.cocktailbarservice`): Multitasking split-screen app launcher.
 * **Microsoft Outlook** (`com.microsoft.office.outlook`): Kept intact and excluded from debloat presets.
 * **Samsung Digital Wellbeing** (`com.samsung.android.forest`): Screen time and focus tracking preserved.
+* **Samsung Gaming Hub & Game Booster** (`com.samsung.android.game.gamehome` & `gametools`): Game Center library and floating in-game performance tools preserved for media & gaming.
 
 ---
 

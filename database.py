@@ -338,28 +338,28 @@ PACKAGES: List[Dict[str, Any]] = [
     },
 
     # ==========================================
-    # 7. GOS (Game Optimizing Service) & Gaming Hub (SAFE)
+    # 7. Gaming Hub, Game Booster & GOS (OPTIONAL)
     # ==========================================
     {
         "id": "com.samsung.android.game.gos",
         "name": "Game Optimizing Service (GOS)",
         "category": "gos_gaming",
-        "risk": "safe",
-        "description": "Throttles Exynos 1380 CPU & GPU performance to prevent heat. Removing unlocks full processor performance!"
+        "risk": "optional",
+        "description": "Game performance coordinator for Game Booster profiles. Preserved by default for tablet gaming."
     },
     {
         "id": "com.samsung.android.game.gamehome",
-        "name": "Gaming Hub (Game Home)",
+        "name": "Gaming Hub / Game Center (Game Home)",
         "category": "gos_gaming",
-        "risk": "safe",
-        "description": "Samsung's game aggregation launcher with ads and instant plays."
+        "risk": "optional",
+        "description": "Samsung Game Center library & launcher for organizing tablet games. Preserved by default."
     },
     {
         "id": "com.samsung.android.game.gametools",
         "name": "Game Booster / Tools",
         "category": "gos_gaming",
-        "risk": "safe",
-        "description": "In-game floating toolbar and screen recorder."
+        "risk": "optional",
+        "description": "In-game floating toolbar, screenshot, FPS stats, and screen recorder for tablet games. Preserved by default."
     },
 
     # ==========================================
