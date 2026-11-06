@@ -383,7 +383,7 @@ class DebloaterGUI(tk.Tk):
             ("⚡ Exynos 1380 GOS Unthrottled", COLOR_ACCENT_EMERALD),
             ("🔇 De-Bixby Standby Battery Saver", COLOR_ACCENT_BLUE),
             ("🔒 S Pen, Notes & DeX 100% Protected", "#a855f7"),
-            ("📧 Microsoft Outlook Preserved", COLOR_TEXT_MUTED)
+            ("✨ Outlook & Wellbeing Preserved", COLOR_TEXT_MUTED)
         ]
         for p_text, p_color in pills:
             p_lbl = tk.Label(pill_row, text=p_text, font=(FONT_FAMILY, 8, "bold"),

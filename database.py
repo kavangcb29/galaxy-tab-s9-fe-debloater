@@ -310,10 +310,10 @@ PACKAGES: List[Dict[str, Any]] = [
     },
     {
         "id": "com.samsung.android.forest",
-        "name": "Digital Care / Forest",
+        "name": "Samsung Digital Wellbeing (Digital Care / Forest)",
         "category": "samsung_bloat",
-        "risk": "safe",
-        "description": "Samsung wellbeing background service tracking screen on time."
+        "risk": "optional",
+        "description": "Samsung screen time and digital wellbeing tracking engine (Preserved and excluded from debloat presets)."
     },
     {
         "id": "com.samsung.android.app.sharelive",

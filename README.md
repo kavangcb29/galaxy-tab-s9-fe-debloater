@@ -69,6 +69,7 @@ The following packages are explicitly marked **DANGER / CRITICAL** and protected
 * **Samsung DeX** (`com.sec.android.desktopmode.uiservice` & `com.sec.android.app.desktoplauncher`): Desktop multitasking mode.
 * **Edge Panels** (`com.samsung.android.app.cocktailbarservice`): Multitasking split-screen app launcher.
 * **Microsoft Outlook** (`com.microsoft.office.outlook`): Kept intact and excluded from debloat presets.
+* **Samsung Digital Wellbeing** (`com.samsung.android.forest`): Screen time and focus tracking preserved.
 
 ---
 

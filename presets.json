@@ -35,7 +35,6 @@
         "com.samsung.android.rapps",
         "com.samsung.safetyinformation",
         "com.samsung.android.app.watchmanagerstub",
-        "com.samsung.android.forest",
         "com.samsung.android.app.sharelive",
         "com.samsung.android.bixby.agent",
         "com.samsung.android.bixby.wakeup",
@@ -86,7 +85,6 @@
         "com.samsung.android.rapps",
         "com.samsung.safetyinformation",
         "com.samsung.android.app.watchmanagerstub",
-        "com.samsung.android.forest",
         "com.samsung.android.app.sharelive"
       ]
     },
