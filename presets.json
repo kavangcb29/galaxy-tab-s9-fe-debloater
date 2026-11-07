@@ -36,6 +36,10 @@
         "com.samsung.safetyinformation",
         "com.samsung.android.app.watchmanagerstub",
         "com.samsung.android.app.sharelive",
+        "com.rsupport.rs.activity.rsupport.aas2",
+        "com.sec.android.easyMover",
+        "com.sec.android.easyMover.Agent",
+        "com.samsung.android.smartswitchassistant",
         "com.samsung.android.bixby.agent",
         "com.samsung.android.bixby.wakeup",
         "com.samsung.android.bixby.service",
@@ -82,7 +86,11 @@
         "com.samsung.android.rapps",
         "com.samsung.safetyinformation",
         "com.samsung.android.app.watchmanagerstub",
-        "com.samsung.android.app.sharelive"
+        "com.samsung.android.app.sharelive",
+        "com.rsupport.rs.activity.rsupport.aas2",
+        "com.sec.android.easyMover",
+        "com.sec.android.easyMover.Agent",
+        "com.samsung.android.smartswitchassistant"
       ]
     },
     {

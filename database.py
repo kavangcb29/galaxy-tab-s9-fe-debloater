@@ -336,6 +336,34 @@ PACKAGES: List[Dict[str, Any]] = [
         "risk": "safe",
         "description": "Regional app suggestions and promotional recommendations stub found on Indian devices."
     },
+    {
+        "id": "com.rsupport.rs.activity.rsupport.aas2",
+        "name": "Samsung Smart Tutor (Remote Support)",
+        "category": "samsung_bloat",
+        "risk": "safe",
+        "description": "Remote diagnostics and customer support client by RSupport. Safe to remove."
+    },
+    {
+        "id": "com.sec.android.easyMover",
+        "name": "Samsung Smart Switch",
+        "category": "samsung_bloat",
+        "risk": "safe",
+        "description": "Data migration tool for transferring content from an old device. Safe to remove after initial setup."
+    },
+    {
+        "id": "com.sec.android.easyMover.Agent",
+        "name": "Smart Switch Agent",
+        "category": "samsung_bloat",
+        "risk": "safe",
+        "description": "Background transfer receiver and daemon for Samsung Smart Switch."
+    },
+    {
+        "id": "com.samsung.android.smartswitchassistant",
+        "name": "Smart Switch Setup Assistant",
+        "category": "samsung_bloat",
+        "risk": "safe",
+        "description": "Setup wizard and onboarding assistant integration for Smart Switch."
+    },
 
     # ==========================================
     # 7. Gaming Hub, Game Booster & GOS (OPTIONAL)

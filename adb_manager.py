@@ -370,6 +370,13 @@ class ADBManager:
         combined = f"{stdout} {stderr}".lower()
         if "new state: disabled" in combined or "disabled-user" in combined or code == 0:
             return True, "Package successfully disabled."
+
+        # Fallback to user-0 uninstall if disable-user is restricted by shell security policy on One UI 6+
+        if "securityexception" in combined or "cannot change component state" in combined or code != 0:
+            ok, msg = self.uninstall_package(package_id, keep_data=True, serial=serial)
+            if ok:
+                return True, "Uninstalled for User 0 (disable-user restricted by One UI security policy)."
+
         return False, stdout or stderr or "Failed to disable package"
 
     def restore_package(self, package_id: str, serial: Optional[str] = None) -> Tuple[bool, str]:

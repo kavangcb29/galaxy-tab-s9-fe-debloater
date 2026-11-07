@@ -1,7 +1,7 @@
 # 🚀 Samsung Galaxy Tab S9 FE Debloater & Optimizer Toolkit
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Changelog](https://img.shields.io/badge/Changelog-v1.2.0-blue.svg)](CHANGELOG.md)
+[![Changelog](https://img.shields.io/badge/Changelog-v1.3.0-blue.svg)](CHANGELOG.md)
 [![Python: 3.9+](https://img.shields.io/badge/Python-3.9%2B-brightgreen.svg)](https://www.python.org/)
 [![Platform: Android / One UI](https://img.shields.io/badge/Platform-One%20UI%206%20%7C%207%20%7C%208%20%7C%208.5%20%7C%209-orange.svg)](https://www.samsung.com)
 [![Device: Tab S9 FE / FE+](https://img.shields.io/badge/Device-Galaxy%20Tab%20S9%20FE%20%7C%20FE%2B-blueviolet.svg)](#supported-devices)

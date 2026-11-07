@@ -5,6 +5,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [v1.3.0] - 2026-11-07
+
+### 🧹 Smart Tutor & Smart Switch Debloat (Added as Defaults)
+* **Samsung Smart Tutor Removed & Defaulted**: Added `com.rsupport.rs.activity.rsupport.aas2` (RSupport remote support client) to default debloat presets and removed from the active device.
+* **Samsung Smart Switch Suite Removed & Defaulted**: Added Smart Switch main application (`com.sec.android.easyMover`), background agent (`com.sec.android.easyMover.Agent`), and onboarding assistant (`com.samsung.android.smartswitchassistant`) to default debloat presets and stripped from the active device.
+* **Resilient SecurityException Fallback**: Enhanced `adb_manager.py`'s `disable_package` to automatically fallback to `pm uninstall -k --user 0` when One UI security policies block shell component state changes.
+
+---
+
 ## [v1.2.0] - 2026-11-06
 
 ### 🎮 Added & Preserved (Gaming & Media Tablet Focus)
